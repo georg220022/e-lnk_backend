@@ -1,0 +1,7 @@
+djangorestframework
+Django==3.2
+django-redis
+geoip2
+python-dotenv
+psycopg2-binary==2.8.6
+gunicorn
