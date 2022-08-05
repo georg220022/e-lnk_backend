@@ -1,10 +1,11 @@
+from tabnanny import verbose
 from django.db import models
 from users.models import User
 
 
 class LinkRegUser(models.Model):
     # Автор
-    author = models.ForeignKey(User, on_delete=models.PROTECT,
+    author = models.ForeignKey(User, on_delete=models.CASCADE,
                                related_name='owner_link', null=False)
     # Изначальная ссылка
     long_link = models.TextField(db_index=True, max_length=5000, null=False)
@@ -35,18 +36,23 @@ class LinkRegUser(models.Model):
     public_stat_small = models.BooleanField(default=False, null=True)
 
     class Meta:
-        ordering = ['-id']
+        #verbose_name = 'Ссылки от зарегестрированных пользователей'
+        verbose_name_plural = 'Ссылки от зарегестрированных пользователей'
+        ordering = ['date_add']
         constraints = [
             models.UniqueConstraint(fields=['short_code'],
                                     name='unique_generate_link')
             ]
+    
+    def __str__(self):
+        return f'{self.short_code}, {self.author}'
 
 
 class InfoLink(models.Model):
     # Дата просмотра ссылки
     date_check = models.DateTimeField(db_index=True)
     # Какая ссылка открыта
-    link_check = models.ForeignKey(LinkRegUser, on_delete=models.PROTECT,
+    link_check = models.ForeignKey(LinkRegUser, on_delete=models.CASCADE,
                                    related_name='link_link', null=False)
     # Из какой страны перешли по ссылке
     country_check_id = models.CharField(db_index=True, blank=True,

@@ -2,18 +2,20 @@ import os
 import redis
 from pathlib import Path
 from dotenv import load_dotenv
+from datetime import timedelta
 
 
 load_dotenv()
 
 APPEND_SLASH = False
-ALLOWED_HOSTS = [f"{os.getenv('ALLOWED_HOSTS')}"]
+ALLOWED_HOSTS = ['46.229.214.129', '127.0.0.1', 'e-lnk.ru']
 SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG')
 BASE_DIR = Path(__file__).resolve().parent.parent
 AUTH_USER_MODEL = 'users.User'
 SITE_NAME = os.getenv('SITE_NAME')
 
+REDIS_DB_STAT = os.getenv('REDIS_DB_STAT')
 REDIS_HOST = os.getenv('REDIS_HOST')
 REDIS_PORT = os.getenv('REDIS_PORT')
 REDIS_DB = os.getenv('REDIS_DB')
@@ -24,28 +26,37 @@ REDIS_BASE_FOR_LINK = redis.StrictRedis(host=REDIS_HOST,
                                port=REDIS_PORT,
                                db=REDIS_DB,
                                password=REDIS_PASS)
+REDIS_BASE_FOR_STAT = redis.StrictRedis(host=REDIS_HOST,
+                               port=REDIS_PORT,
+                               db=REDIS_DB_STAT,
+                               password=REDIS_PASS)
 
 
 INSTALLED_APPS = [
+    'rest_framework_simplejwt.token_blacklist',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'djoser',
     'elink_redirect',
     'users',
     'elink_index',
     'personal_area',
-    'rest_framework',
-    'rest_framework.authtoken',
+    #'rest_framework_simplejwt.token_blacklist',
+    
+    #'rest_framework.authtoken',
+
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    #'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -119,9 +130,12 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
+    #'DEFAULT_AUTHENTICATION_CLASSES': [
+    #    'rest_framework.authentication.BasicAuthentication',
+    #    'rest_framework.authentication.SessionAuthentication',
+    #],
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.BasicAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated', 
@@ -135,7 +149,7 @@ REST_FRAMEWORK = {
         'user': '250/hour',
         'anon': '80/hour',
         # Локальные рейты создание ссылок
-        'create_link_user': '100/hour',
+        'create_link_user': '1000/hour',
         'create_link_anonym': '1000/hour',
         # Рейты ввода пароля
         'user_pass_try': '50/hour',
@@ -152,4 +166,13 @@ CACHES = {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         }
     }
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=15),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
+    'JTI_CLAIM': 'jti',
 }

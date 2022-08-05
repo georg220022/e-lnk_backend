@@ -1,0 +1,34 @@
+server {
+    proxy_connect_timeout 5s;
+    server_name e-lnk.ru;
+
+    location / {
+        root /home/gera/e-lnk_front/dist;
+        index index.html;
+        try_files $uri $uri/ @redir;
+    }
+
+    location /api/v1 {
+        proxy_pass http://127.0.0.1:8000;
+    }
+
+    location /dist {
+        root /home/gera/e-lnk_front;
+    }
+    location /fonts {
+        root /home/gera/e-lnk_front/dist;
+    }
+    location /img {
+        root /home/gera/e-lnk_front/dist;
+    }
+    location /js {
+        root /home/gera/e-lnk_front/dist;
+    }
+    location /scss {
+        root /home/gera/e-lnk_front/dist;
+    }
+
+    location @redir {
+        proxy_pass http://127.0.0.1:8000;
+    }
+}

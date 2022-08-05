@@ -51,6 +51,8 @@ class LinkAuthSerializer(serializers.ModelSerializer):
 
 
     def validate(self, data):
+        print('хуй')
+        print(self.context)
         data.pop('longLink')
         data['short_code'] = GeneratorShortCode.for_postgresql()                    # Генератор short_code для PostgreSQL
         data['date_add'] = timezone.now()

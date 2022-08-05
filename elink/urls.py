@@ -5,9 +5,13 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
+    path('auth/', include('djoser.urls')),
+    # JWT-эндпоинты, для управления JWT-токенами:
+    path('auth/', include('djoser.urls.jwt')),
     path('admin/', admin.site.urls),
     path('', include('elink_redirect.urls')),
     path('api/v1', include('elink_index.urls')),
+    path('api/v1', include('users.urls')),
     path('api/v1/panel', include('personal_area.urls')),
 ]
 if settings.DEBUG:

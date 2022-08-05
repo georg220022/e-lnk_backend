@@ -2,6 +2,7 @@ from django.utils import timezone
 from elink_index.models import LinkRegUser, InfoLink
 from .country_get import DetectCountry
 import validators
+from django.shortcuts import get_object_or_404
 import time
 
 NoneType = type(None)
@@ -12,20 +13,15 @@ class CheckLink:
     def get_long_url(cls, request_data) -> bool:
         long_link = request_data.data.get('longLink', False)
         if long_link and len(long_link) < 5001:
-            if '://' in long_link:
-                #print('da')
+            print(long_link[0:8])
+            if 'https://' == long_link[0:8] or 'http://' == long_link[0:7]:
                 return long_link
             else:
-                #print('net')
                 long_link = 'http://' + long_link
                 return long_link
-            #if validators.url(long_link, public=False):
-            #    print('CERF')
-                                              # Если ссылка отправленная пользователем прошла проверку - вернем ее.
-        return False                                                          # Иначе вернем False.
+        return False
 
-
-    def check_limited(obj) -> bool:                                                   # Проверка лимитов по ссылке
+    def check_limited(obj) -> bool:
         if obj.limited_link <= -1:
             return True
         elif obj.limited_link >= 1:
@@ -36,15 +32,15 @@ class CheckLink:
             return False
 
 
-    def check_device(request_meta):                                           # Определяем девайс открывшего ссылку
+    def check_device(request_meta):
         device_name = request_meta['HTTP_USER_AGENT']
-        if ('Windows' or 'Linux' or 'Macintosh' or 'Dos') in device_name:
+        if ('Windows' or 'Linux' or 'Macintosh' or 'Dos') in device_name: #.lower()
             return 'COMPUTER'
         elif ('Android' or 'ios') in device_name:
             return 'PHONE'
         else:
             return 'UNKNOWN'
-    
+
     def check_date_link(obj):                                                 # Проверяем даты открытия-закрытия доступа к ссылке
         now = timezone.now()
         start = obj.start_link
@@ -88,3 +84,12 @@ class CheckLink:
                                 device_id=device_id)
         obj.save()
 
+    def description(request):
+        obj_id = request.data.get('shortCodes', False)
+        link_obj = get_object_or_404(LinkRegUser, short_code=obj_id)
+        if request.user.id == link_obj.author.id:
+            obj_descrip = request.data.get('linkDescription', False)
+            if obj_descrip is not False:
+                if len(obj_descrip) > 0 and len(obj_descrip) <= 1000:
+                    return link_obj
+        return False
