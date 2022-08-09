@@ -8,7 +8,7 @@ from datetime import timedelta
 load_dotenv()
 
 APPEND_SLASH = False
-ALLOWED_HOSTS = ['46.229.214.129', '127.0.0.1', 'e-lnk.ru']
+ALLOWED_HOSTS = 
 SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG')
 BASE_DIR = Path(__file__).resolve().parent.parent
