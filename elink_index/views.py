@@ -1,7 +1,6 @@
-from django import views
-from rest_framework import status, viewsets, permissions
+from rest_framework import status, viewsets
 from rest_framework.response import Response
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import redirect
 from elink.settings import SITE_NAME
 from elink_index.models import LinkRegUser
 from .read_write_base import RedisLink, PostgresLink
@@ -10,9 +9,7 @@ from .serializer import LinkAuthSerializer
 from .validators import CheckLink
 from .user_limit import UserLimit
 from .permissions import Permissons
-from django.core.cache import cache
 from django.db.models import Q
-
 from .cache_module import Cache_module
 
 
@@ -25,7 +22,6 @@ class PostlinkViewset(viewsets.ModelViewSet):
         return Throttle.choices_methods(self)
 
     def create_link(self, request):
-        #print(request.user.token)
         long_link = CheckLink.get_long_url(request)                       # Вернет ссылку или False
         if long_link is not False:
             if request.user.is_anonymous:
@@ -33,22 +29,25 @@ class PostlinkViewset(viewsets.ModelViewSet):
                 return Response(data, status=status.HTTP_201_CREATED)
             else:
                 limit = UserLimit.create_link(request.user)
-                if limit is not True:
-                    return Response(limit, status=status.HTTP_423_LOCKED)
-                context = {
-                    'user_id': request.user.id,
-                    'long_link': long_link
-                }
-                serializer = LinkAuthSerializer(data=request.data,        # Если юзер авторизован - отправляем на сериализацию
-                                                context=context)  # с последующей записью в PostgreSQL
-                if serializer.is_valid(raise_exception=False):
-                    serializer.save()
-                    request.user.link_count += 1
-                    request.user.save()
-                    Cache_module.writer(self.request.user.id, serializer.data)
-                    return Response(serializer.data,
-                                    status=status.HTTP_201_CREATED)
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                if request.user.is_active:
+                    if limit is not True:
+                        return Response(limit, status=status.HTTP_423_LOCKED)
+                    context = {
+                        'user_id': request.user.id,
+                        'long_link': long_link
+                    }
+                    serializer = LinkAuthSerializer(data=request.data,        # Если юзер авторизован - отправляем на сериализацию
+                                                    context=context)  # с последующей записью в PostgreSQL
+                    if serializer.is_valid(raise_exception=False):
+                        serializer.save()
+                        request.user.link_count += 1
+                        request.user.save()
+                        Cache_module.writer(self.request.user.id, serializer.data)
+                        return Response(serializer.data,
+                                        status=status.HTTP_201_CREATED)
+                    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                data = {'error': 'Учетная запись не активирована. Перейдите по ссылке которая была отправлена по почте при регистрации.'}
+                return Response(data, status=status.HTTP_400_BAD_REQUEST)
         data = {'msg': 'Ссылка не прошла проверку или поле не заполнено'}
         return Response(data, status=status.HTTP_400_BAD_REQUEST)
 
@@ -59,7 +58,7 @@ class PostlinkViewset(viewsets.ModelViewSet):
             if object_postgres is not False:
                 return Response(object_postgres, status=status.HTTP_200_OK)
         return redirect(SITE_NAME) # НАПИСАТЬ ВОЗВРАЩЕНИЕ НЕ ВЕРНО ПАРОЛЯ ЕСЛИ ЧЕЛ ШАЛИТ
-    
+
     def delete_link(self, request):
         short_codes = request.data.get('shortCodes', False)
         if len(short_codes) > 0 and short_codes is not False:

@@ -1,8 +1,4 @@
-from asyncio.windows_events import NULL
 import base64
-from dataclasses import field
-import datetime
-
 from django.forms import ValidationError
 from .generator_code import GeneratorShortCode
 from .qr_generator import QrGenerator
@@ -51,8 +47,6 @@ class LinkAuthSerializer(serializers.ModelSerializer):
 
 
     def validate(self, data):
-        print('хуй')
-        print(self.context)
         data.pop('longLink')
         data['short_code'] = GeneratorShortCode.for_postgresql()                    # Генератор short_code для PostgreSQL
         data['date_add'] = timezone.now()
@@ -63,7 +57,6 @@ class LinkAuthSerializer(serializers.ModelSerializer):
         data['date_stop']= data.pop('linkEndDate', None)
         data['long_link'] = self.context['long_link']#
         data['author'] = get_object_or_404(User, id=int(self.context['user_id']))
-        #print(data)
         return data
 
     def create(self, validated_data):
@@ -74,13 +67,11 @@ class LinkAuthSerializer(serializers.ModelSerializer):
             short_code = (GeneratorShortCode.for_postgresql() * 6)          # Только тогда выбросим исключение уникальности поля БД
             obj = LinkRegUser.objects.create(**validated_data,              # и сгенерируем новый short_code с бОльшей длинной....             # тут уже скорее вселенная схлопнется нежели совпадут 2 строки
                                              short_code=short_code)
-        #print('что опять нахуй')
         obj.save()
         return obj
 
     def get_short_link(self, obj) -> str:
         short_link = SITE_NAME + obj.short_code
-        #print(short_link)
         return short_link
 
     def get_qr(self, obj) -> base64:

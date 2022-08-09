@@ -13,7 +13,6 @@ class CheckLink:
     def get_long_url(cls, request_data) -> bool:
         long_link = request_data.data.get('longLink', False)
         if long_link and len(long_link) < 5001:
-            print(long_link[0:8])
             if 'https://' == long_link[0:8] or 'http://' == long_link[0:7]:
                 return long_link
             else:

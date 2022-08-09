@@ -14,6 +14,9 @@ class TryPasswordAnonymousThrottle(AnonRateThrottle):
 class TryPasswordUserThrottle(UserRateThrottle):
     scope = 'user_pass_try'
 
+class RegistrationAnonymousThrottle(AnonRateThrottle):
+    scope = 'anon_registration'
+
 class Throttle_create_link:
 
     def choices_methods(obj_self):

@@ -1,7 +1,7 @@
 import geoip2.database
 from elink.settings import BASE_DIR
 
-reader = geoip2.database.Reader(f'{BASE_DIR}\data.mmdb')
+reader = geoip2.database.Reader(f'{BASE_DIR}/data.mmdb')
 
 class DetectCountry():
 

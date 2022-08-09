@@ -56,10 +56,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=50, null=True, verbose_name='имя') # Логин
     company_name = models.CharField(max_length=100, null=True, verbose_name='компания')
     email = models.EmailField(max_length=100, unique=True) # Email
-    is_active = models.BooleanField(default=True, verbose_name='статус активации') # Статус активации
+    is_active = models.BooleanField(default=False, verbose_name='статус активации') # Статус активации
     is_staff = models.BooleanField(default=False, verbose_name='админ') # Статус админа
     date_join = models.DateTimeField(default=timezone.now(), verbose_name='дата регистрации')
     banned = models.BooleanField(default=False) #Банхаммер
+    public_key = models.CharField(max_length=25, db_index=True, default=0000000000)
     #limit_link = models.PositiveIntegerField(default=1000) # Сколько всего ссылок можно создать
     USERNAME_FIELD = 'email' # Идентификатор для обращения
     #REQUIRED_FIELDS = ['email'] # Список имён полей для Superuser

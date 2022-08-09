@@ -15,6 +15,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 AUTH_USER_MODEL = 'users.User'
 SITE_NAME = os.getenv('SITE_NAME')
 
+EMAIL_HOST = os.getenv('EMAIL_HOST')
+EMAIL_PORT = os.getenv('EMAIL_PORT')
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = True
+
+REDIS_DB_ACTIVATE = os.getenv('REDIS_DB_ACTIVATE')
 REDIS_DB_STAT = os.getenv('REDIS_DB_STAT')
 REDIS_HOST = os.getenv('REDIS_HOST')
 REDIS_PORT = os.getenv('REDIS_PORT')
@@ -22,6 +30,10 @@ REDIS_DB = os.getenv('REDIS_DB')
 REDIS_PASS = os.getenv('REDIS_PASS')
 REDIS_LOCATION = os.getenv('REDIS_LOCATION')
 REDIS_DB_CACHE = os.getenv('REDIS_DB_CACHE')
+REDIS_FOR_ACTIVATE = redis.StrictRedis(host=REDIS_HOST,
+                               port=REDIS_PORT,
+                               db=REDIS_DB_ACTIVATE,
+                               password=REDIS_PASS)
 REDIS_BASE_FOR_LINK = redis.StrictRedis(host=REDIS_HOST,
                                port=REDIS_PORT,
                                db=REDIS_DB,
@@ -46,10 +58,6 @@ INSTALLED_APPS = [
     'users',
     'elink_index',
     'personal_area',
-    #'rest_framework_simplejwt.token_blacklist',
-    
-    #'rest_framework.authtoken',
-
 ]
 
 MIDDLEWARE = [
@@ -154,6 +162,8 @@ REST_FRAMEWORK = {
         # Рейты ввода пароля
         'user_pass_try': '50/hour',
         'anon_pass_try': '25/hour',
+        # Рейты запросов на регистрацию
+        'anon_registration': '3/hour',
     },
 }
 
@@ -174,5 +184,6 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
     'UPDATE_LAST_LOGIN': True,
+    'USER_ID_FIELD': 'public_key',
     'JTI_CLAIM': 'jti',
 }
