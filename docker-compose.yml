@@ -4,7 +4,7 @@ version: '3.3'
 services:
   redis_db:
     image: redis
-    command: redis-server --requirepass 'GsM10zWmoscow95'
+    command: redis-server --requirepass ''
     restart: always
     ports:
       - 6379:6379
