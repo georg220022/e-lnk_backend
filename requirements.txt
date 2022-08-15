@@ -5,6 +5,6 @@ geoip2
 python-dotenv
 psycopg2-binary==2.8.6
 gunicorn
-djangorestframework-simplejwt==4.7.2
+djangorestframework-simplejwt
 djoser
 segno
