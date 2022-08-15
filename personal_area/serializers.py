@@ -1,70 +1,99 @@
-import base64
-from elink_index.generator_code import GeneratorShortCode
-from elink_index.qr_generator import QrGenerator
 from elink_index.models import LinkRegUser
-from django.db import IntegrityError
-from users.models import User
-from django.utils import timezone
+from datetime import datetime, timedelta
 from rest_framework import serializers
-from django.shortcuts import get_object_or_404
 from elink.settings import SITE_NAME
-from elink_index.models import LinkRegUser, InfoLink
-
-class InfoLinkSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = InfoLink
-        fields = '__all__'
 
 
 class StatSerializer(serializers.ModelSerializer):
 
-    #statz = InfoLinkSerializer(many=True, read_only=True)
-
-    #stats = serializers.SerializerMethodField()
-    link_check = serializers.SerializerMethodField()    
-    country_check_id = serializers.SerializerMethodField()
-    device_id = serializers.SerializerMethodField()
-    linkId = serializers.ModelField(model_field=LinkRegUser()._meta.get_field('id'))
-    #qr = serializers.SerializerMethodField()
+    statistic = serializers.SerializerMethodField(read_only=True)
+    linkId = serializers.ModelField(model_field=LinkRegUser(
+                                    )._meta.get_field('id'))
     shortLink = serializers.SerializerMethodField('get_short_link')
-    #shortLink = serializers.ModelField(model_field=LinkRegUser()._meta.get_field('short_code'))
-    longLink = serializers.ModelField(model_field=LinkRegUser()._meta.get_field('long_link'))
-    linkDescription = serializers.ModelField(model_field=LinkRegUser()._meta.get_field('description'))
-    linkLimit = serializers.ModelField(model_field=LinkRegUser()._meta.get_field('limited_link'))
-    linkPassword = serializers.ModelField(model_field=LinkRegUser()._meta.get_field('secure_link'))
-    linkStartDate = serializers.ModelField(model_field=LinkRegUser()._meta.get_field('start_link'))
-    linkEndDate = serializers.ModelField(model_field=LinkRegUser()._meta.get_field('date_stop'))
-    linkCreatedDate = serializers.ModelField(model_field=LinkRegUser()._meta.get_field('date_add'))
-    clicked = serializers.ModelField(model_field=LinkRegUser()._meta.get_field('how_many_clicked'))
-    repeatedClicked = serializers.ModelField(model_field=LinkRegUser()._meta.get_field('again_how_many_clicked'))
+    longLink = serializers.ModelField(model_field=LinkRegUser(
+                                      )._meta.get_field('long_link'))
+    linkDescription = serializers.ModelField(model_field=LinkRegUser(
+                                             )._meta.get_field('description'))
+    linkLimit = serializers.ModelField(model_field=LinkRegUser(
+                                       )._meta.get_field('limited_link'))
+    linkPassword = serializers.ModelField(model_field=LinkRegUser(
+                                          )._meta.get_field('secure_link'))
+    linkStartDate = serializers.ModelField(model_field=LinkRegUser(
+                                           )._meta.get_field('start_link'))
+    linkEndDate = serializers.ModelField(model_field=LinkRegUser(
+                                         )._meta.get_field('date_stop'))
+    linkCreatedDate = serializers.ModelField(model_field=LinkRegUser(
+                                             )._meta.get_field('date_add'))
+    clicked = serializers.ModelField(model_field=LinkRegUser(
+                                     )._meta.get_field('how_many_clicked'))
+    repeatedClicked = serializers.ModelField(model_field=LinkRegUser(
+                                             )._meta.get_field(
+                                              'again_how_many_clicked'))
 
     class Meta:
         model = LinkRegUser
         exclude = ('short_code', 'long_link', 'start_link', 'secure_link',
-                    'date_stop', 'author', 'date_add','public_stat_full',
-                    'public_stat_small', 'again_how_many_clicked',
-                    'how_many_clicked', 'limited_link', 'description')
+                   'date_stop', 'author', 'date_add', 'public_stat_full',
+                   'public_stat_small', 'again_how_many_clicked',
+                   'how_many_clicked', 'limited_link', 'description', 'id')
         read_only_fields = ('__all__',)
-        """read_only_fields = ('short_code', 'long_link', 'start_link', 'secure_link',
-                            'date_stop', 'author', 'date_add', 'public_stat_full',
-                            'public_stat_small', 'again_how_many_clicked',
-                            'how_many_clicked', 'limited_link', 'id', 'link_check', 'country_check_id', 'device_id',)"""
 
     def get_short_link(self, obj) -> str:
         short_link = SITE_NAME + obj.short_code
-        #print(short_link)
         return short_link
-    
-    def get_queryset(self, obj):
-        return InfoLink.objects.filter(link_check = obj.id)
 
-    def get_link_check(self, obj):
-        #print(self.get_queryset)
-        return 1
+    def get_statistic(self, obj):
+        queryset = self.context.filter(link_check__id=obj.id)
 
-    def get_country_check_id(self, obj):
-        return 1#InfoLink.objects.filter(link_check = obj.id)
+        def country(obj, queryset):
+            countrys = {}
+            for obj in queryset:
+                if obj.country in countrys:
+                    countrys[obj.country] += 1
+                else:
+                    countrys[obj.country] = 1
 
-    def get_device_id(self, obj):
-        return 1#InfoLink.objects.filter(link_check = obj.id)
+            if len(countrys) > 9:
+                other = 0
+                while len(countrys) > 9:
+                    min_id = min(countrys)
+                    other += countrys[min_id]
+                    del countrys[min_id]
+                if other > 0:
+                    countrys['other'] = other
+            elif len(countrys) == 0:
+                return None
+            return countrys
+
+        def devices(obj, queryset):
+            device = {
+                1: 0, 2: 0, 3: 0,
+                4: 0, 5: 0, 6: 0,
+                7: 0,
+            }
+            for obj in queryset:
+                if obj.device_id in device:
+                    device[obj.device_id] += 1
+                else:
+                    device[obj.device_id] = 1
+            return device
+
+        def hours(obj, queryset):
+            one_day = (datetime.now() -
+                       timedelta(hours=24))  # использую наивную дату
+            queryset = queryset.filter(date_check__gte=one_day)
+            hour = {
+                '00': 0, '01': 0, '02': 0, '03': 0, '04': 0, '05': 0,
+                '06': 0, '07': 0, '08': 0, '09': 0, '10': 0, '11': 0,
+                '12': 0, '13': 0, '14': 0, '15': 0, '16': 0, '17': 0,
+                '18': 0, '19': 0, '20': 0, '21': 0, '22': 0, '23': 0,
+            }
+            for obj in queryset:
+                hour[str(obj.date_check.strftime("%H"))] += 1
+            return hour
+
+        return {
+            'country': country(obj, queryset),
+            'device': devices(obj, queryset),
+            'hours': hours(obj, queryset)
+        }

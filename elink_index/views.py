@@ -29,25 +29,26 @@ class PostlinkViewset(viewsets.ModelViewSet):
                 return Response(data, status=status.HTTP_201_CREATED)
             else:
                 limit = UserLimit.create_link(request.user)
-                if request.user.is_active:
-                    if limit is not True:
-                        return Response(limit, status=status.HTTP_423_LOCKED)
-                    context = {
-                        'user_id': request.user.id,
-                        'long_link': long_link
-                    }
-                    serializer = LinkAuthSerializer(data=request.data,        # Если юзер авторизован - отправляем на сериализацию
-                                                    context=context)  # с последующей записью в PostgreSQL
-                    if serializer.is_valid(raise_exception=False):
-                        serializer.save()
-                        request.user.link_count += 1
-                        request.user.save()
-                        Cache_module.writer(self.request.user.id, serializer.data)
-                        return Response(serializer.data,
-                                        status=status.HTTP_201_CREATED)
-                    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-                data = {'error': 'Учетная запись не активирована. Перейдите по ссылке которая была отправлена по почте при регистрации.'}
-                return Response(data, status=status.HTTP_400_BAD_REQUEST)
+                #if request.user.is_active: Эта хуета под вопросом
+                if limit is not True:
+                    return Response(limit, status=status.HTTP_423_LOCKED)
+                context = {
+                    'user_id': request.user.id,
+                    'long_link': long_link
+                }
+                serializer = LinkAuthSerializer(data=request.data,        # Если юзер авторизован - отправляем на сериализацию
+                                                context=context)  # с последующей записью в PostgreSQL
+                if serializer.is_valid(raise_exception=False):
+                    serializer.save()
+                    request.user.link_count += 1
+                    request.user.save()
+                    Cache_module.writer(self.request.user.id, serializer.data)
+                    return Response(serializer.data,
+                                    status=status.HTTP_201_CREATED)
+                return Response(serializer.errors,
+                                status=status.HTTP_400_BAD_REQUEST)
+                #data = {'error': 'Учетная запись не активирована. Перейдите по ссылке которая была отправлена по почте при регистрации.'}
+                #return Response(data, status=status.HTTP_400_BAD_REQUEST)
         data = {'msg': 'Ссылка не прошла проверку или поле не заполнено'}
         return Response(data, status=status.HTTP_400_BAD_REQUEST)
 
@@ -63,7 +64,8 @@ class PostlinkViewset(viewsets.ModelViewSet):
         short_codes = request.data.get('shortCodes', False)
         if len(short_codes) > 0 and short_codes is not False:
             author = self.request.user
-            queryset = LinkRegUser.objects.filter(Q(author=author) & Q(short_code__in=short_codes))
+            queryset = LinkRegUser.objects.filter(Q(author=author) &
+                                                  Q(short_code__in=short_codes))
             if len(queryset) > 0:
                 id_data = [id for id in queryset.values('id')]
                 queryset.delete()

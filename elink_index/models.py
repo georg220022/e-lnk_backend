@@ -1,4 +1,3 @@
-from tabnanny import verbose
 from django.db import models
 from users.models import User
 
@@ -16,10 +15,9 @@ class LinkRegUser(models.Model):
     # описание
     description = models.CharField(null=True, max_length=1000, blank=True)
     # включить лимит по переходам
-    #limit = models.BooleanField(null=False, default=0)
+    # limit = models.BooleanField(null=False, default=0)
     # количество переходов по ссылке
-    limited_link = models.IntegerField(default=-1,
-                                               blank=True)
+    limited_link = models.IntegerField(default=-1, blank=True)
     # пароль на ссылку
     secure_link = models.CharField(blank=True, max_length=10)
     # с какой даты ссылка активна
@@ -36,14 +34,14 @@ class LinkRegUser(models.Model):
     public_stat_small = models.BooleanField(default=False, null=True)
 
     class Meta:
-        #verbose_name = 'Ссылки от зарегестрированных пользователей'
+        # verbose_name = 'Ссылки от зарегестрированных пользователей'
         verbose_name_plural = 'Ссылки от зарегестрированных пользователей'
-        ordering = ['date_add']
+        ordering = ['-date_add']
         constraints = [
             models.UniqueConstraint(fields=['short_code'],
                                     name='unique_generate_link')
             ]
-    
+
     def __str__(self):
         return f'{self.short_code}, {self.author}'
 
@@ -55,7 +53,10 @@ class InfoLink(models.Model):
     link_check = models.ForeignKey(LinkRegUser, on_delete=models.CASCADE,
                                    related_name='link_link', null=False)
     # Из какой страны перешли по ссылке
-    country_check_id = models.CharField(db_index=True, blank=True,
-                                        max_length=1000, null=True)
+    country = models.CharField(db_index=True, blank=True,
+                               max_length=1000, null=True)
     # Устройство
-    device_id = models.CharField(max_length=20, db_index=True)
+    device_id = models.PositiveSmallIntegerField(db_index=True)
+
+    class Meta:
+        ordering = ['-date_check']

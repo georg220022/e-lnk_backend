@@ -2,10 +2,7 @@ from elink.settings import SITE_NAME, REDIS_BASE_FOR_LINK as REDIS_BASE
 from django.core.exceptions import ObjectDoesNotExist
 from .generator_code import GeneratorShortCode
 from .qr_generator import QrGenerator
-from .models import LinkRegUser, InfoLink
-from .country_get import DetectCountry
-from .validators import CheckLink
-import time
+from .models import LinkRegUser
 
 
 class RedisLink:
@@ -23,7 +20,6 @@ class RedisLink:
             'qr': qr_code_base64,
             }
         return data
-
 
     @classmethod
     def reader(cls, short_code: str):
@@ -46,37 +42,9 @@ class PostgresLink:
 
     def reader(request, short_code=None):
         if 'p' in str(short_code):
-            #try:
-            obj = LinkRegUser.objects.get(short_code=short_code)
-            #except ObjectDoesNotExist:
-            #    return False
+            try:
+                obj = LinkRegUser.objects.get(short_code=short_code)
+            except ObjectDoesNotExist:
+                return False
             return obj
-            """if not CheckLink.check_date_link(obj):
-                print('BAD_TIME')
-                return 'BAD_TIME'
-            if not CheckLink.check_pass(obj, data):
-                print('BAD_PASSWORD')
-                return 'PASSWORD'
-            if not CheckLink.check_limited(obj):
-                print('LIMIT_END')
-                return 'LIMIT_END'
-            print(3)"""
-            """country = DetectCountry.get_client_ip(request)
-            date_check = time.strftime("%Y-%m-%d %H:%M")
-            device_id = CheckLink.check_device(request.META)
-            if f'{obj.long_link}' in request.COOKIES:
-                obj.how_many_clicked += 1
-                obj.again_how_many_clicked += 1
-            else:
-                obj.how_many_clicked += 1
-            InfoLink.objects.create(link_check=obj,
-                                    country_check_id=country,
-                                    date_check=date_check,
-                                    device_id=device_id)
-            obj.save()
-            data = {
-                'long_link': obj.long_link,
-                'short_code': obj.short_code
-            }
-            return data"""
         return False

@@ -1,15 +1,15 @@
 from django.utils import timezone
 from elink_index.models import LinkRegUser, InfoLink
 from .country_get import DetectCountry
-import validators
 from django.shortcuts import get_object_or_404
 import time
 
 NoneType = type(None)
 
+
 class CheckLink:
 
-    @classmethod #Класс метод под вопросом
+    @classmethod  # Класс метод под вопросом
     def get_long_url(cls, request_data) -> bool:
         long_link = request_data.data.get('longLink', False)
         if long_link and len(long_link) < 5001:
@@ -30,30 +30,37 @@ class CheckLink:
         else:
             return False
 
-
     def check_device(request_meta):
-        device_name = request_meta['HTTP_USER_AGENT']
-        if ('Windows' or 'Linux' or 'Macintosh' or 'Dos') in device_name: #.lower()
-            return 'COMPUTER'
-        elif ('Android' or 'ios') in device_name:
-            return 'PHONE'
+        device_name = request_meta['HTTP_USER_AGENT'].lower()
+        if 'android' in device_name:
+            return 1
+        elif 'windows' in device_name:
+            return 2
+        if 'iphone' in device_name:
+            return 3
+        elif ('mac' and 'pad') in device_name:
+            return 4
+        elif 'linux' in device_name:
+            return 5
+        elif 'mac' in device_name:
+            return 6
         else:
-            return 'UNKNOWN'
+            return 7
 
     def check_date_link(obj):                                                 # Проверяем даты открытия-закрытия доступа к ссылке
         now = timezone.now()
         start = obj.start_link
         stop = obj.date_stop
         if ((type(start) == type(now) and start > now) or
-            (type(stop) == type(now) and stop < now)):
+           (type(stop) == type(now) and stop < now)):
             return False
         return True
 
     def check_pass(obj):                                                       # Стоит ли пароль на ссылке
-        if str(obj.secure_link) == '':# or (str(obj.secure_link) == str(data['linkPassword'])):
+        if str(obj.secure_link) == '': # or (str(obj.secure_link) == str(data['linkPassword'])):
             return True
         return False
-    
+
     def check_request(obj):
         try:
             len_code = len(str(obj['shortCode']))
@@ -67,7 +74,7 @@ class CheckLink:
             return False
         except KeyError:
             return False
-    
+
     def collect_stats(request_obj, obj):
         date_check = time.strftime("%Y-%m-%d %H:%M")
         device_id = CheckLink.check_device(request_obj.META)

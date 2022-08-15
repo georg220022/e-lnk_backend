@@ -7,8 +7,15 @@ from datetime import timedelta
 
 load_dotenv()
 
+
+ACCESS_TIME = os.getenv('ACCESS_TIME')
+REFRESH_TIME = os.getenv('REFRESH_TIME')
+TIME_SAVE_COOKIE = os.getenv('TIME_SAVE_COOKIE')
+
+CACHE_TABLE = os.getenv('CACHE_TABLE')
+
 APPEND_SLASH = False
-ALLOWED_HOSTS = 
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS')
 SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG')
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,8 +26,8 @@ EMAIL_HOST = os.getenv('EMAIL_HOST')
 EMAIL_PORT = os.getenv('EMAIL_PORT')
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
-EMAIL_USE_TLS = False
-EMAIL_USE_SSL = True
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS')
+EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL')
 
 REDIS_DB_ACTIVATE = os.getenv('REDIS_DB_ACTIVATE')
 REDIS_DB_STAT = os.getenv('REDIS_DB_STAT')
@@ -30,18 +37,24 @@ REDIS_DB = os.getenv('REDIS_DB')
 REDIS_PASS = os.getenv('REDIS_PASS')
 REDIS_LOCATION = os.getenv('REDIS_LOCATION')
 REDIS_DB_CACHE = os.getenv('REDIS_DB_CACHE')
-REDIS_FOR_ACTIVATE = redis.StrictRedis(host=REDIS_HOST,
+REDIS_FOR_ACTIVATE = redis.StrictRedis(
+                               host=REDIS_HOST,
                                port=REDIS_PORT,
                                db=REDIS_DB_ACTIVATE,
-                               password=REDIS_PASS)
-REDIS_BASE_FOR_LINK = redis.StrictRedis(host=REDIS_HOST,
+                               password=REDIS_PASS,
+                               )
+REDIS_BASE_FOR_LINK = redis.StrictRedis(
+                               host=REDIS_HOST,
                                port=REDIS_PORT,
                                db=REDIS_DB,
-                               password=REDIS_PASS)
-REDIS_BASE_FOR_STAT = redis.StrictRedis(host=REDIS_HOST,
-                               port=REDIS_PORT,
-                               db=REDIS_DB_STAT,
-                               password=REDIS_PASS)
+                               password=REDIS_PASS,
+                               )
+REDIS_BASE_FOR_STAT = redis.StrictRedis(
+                                        host=REDIS_HOST,
+                                        port=REDIS_PORT,
+                                        db=REDIS_DB_STAT,
+                                        password=REDIS_PASS,
+                                       )
 
 
 INSTALLED_APPS = [
@@ -90,21 +103,15 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'elink.wsgi.application'
 
-"""DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
-"""
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',#os.getenv('DB_ENGINE'),
-        'NAME': 'postgres',#os.getenv('DB_NAME'),
-        'USER': 'elink_user',#os.getenv('DB_USER'),
-        'PASSWORD': 'iBgnBj4bcWzXLEMWQ7BwQ593xu1UWMubm0russia',#os.getenv('DB_PASSWORD'),
-        'HOST': '127.0.0.1',#os.getenv('DB_HOST'),
-        'PORT': '5432'#os.getenv('DB_PORT')
+        'ENGINE': os.getenv('DB_ENGINE'),
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT')
     }
 }
 
@@ -146,24 +153,20 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated', 
+        'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.UserRateThrottle',
         'rest_framework.throttling.AnonRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        # Глобальные рейты на все остальное
-        'user': '250/hour',
-        'anon': '80/hour',
-        # Локальные рейты создание ссылок
-        'create_link_user': '1000/hour',
-        'create_link_anonym': '1000/hour',
-        # Рейты ввода пароля
-        'user_pass_try': '50/hour',
-        'anon_pass_try': '25/hour',
-        # Рейты запросов на регистрацию
-        'anon_registration': '3/hour',
+        'user': os.getenv('USER'),
+        'anon': os.getenv('ANON'),
+        'create_link_user': os.getenv('CREATE_LINK_USER'),
+        'create_link_anonym': os.getenv('CREATE_LINK_ANONYM'),
+        'user_pass_try': os.getenv('USER_PASS_TRY'),
+        'anon_pass_try': os.getenv('ANON_PASS_TRY'),
+        'anon_registration': os.getenv('ANON_REGISTRATION'),
     },
 }
 
@@ -179,11 +182,11 @@ CACHES = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=1),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=15),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(ACCESS_TIME)),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=int(REFRESH_TIME)),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
-    'UPDATE_LAST_LOGIN': True,
+    'UPDATE_LAST_LOGIN': False,
     'USER_ID_FIELD': 'public_key',
     'JTI_CLAIM': 'jti',
 }

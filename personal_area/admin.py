@@ -1,16 +1,15 @@
 from django.contrib import admin
-
 from elink_index.models import LinkRegUser
 from users.models import User
 
 
 @admin.register(LinkRegUser)
 class LinkRegUserAdmin(admin.ModelAdmin):
-    fields = ['short_code', 'author',]
+    fields = ['short_code', 'author', ]
     search_fields = ['short_code', 'secure_link', 'author', 'how_many_clicked']
+
     def has_add_permission(self, request):
         return False
-    #raw_id_fields = ['short_code']
 
 
 @admin.register(User)
@@ -38,11 +37,11 @@ class UserAdmin(admin.ModelAdmin):
     @admin.action(description='Выдать права MODERATOR(без ограничений)')
     def rights_moderator(modeladmin, request, queryset):
         queryset.update(subs_type='MOD')
-    
+
     @admin.action(description='Забанить')
     def ban_user(modeladmin, request, queryset):
         queryset.update(banned=True)
-    
+
     @admin.action(description='Разбанить')
     def unban_user(modeladmin, request, queryset):
         queryset.update(banned=False)

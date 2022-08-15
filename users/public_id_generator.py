@@ -1,5 +1,6 @@
 import random
 
+
 class GeneratorId:
     def public_id():
         new_public_key = ''
