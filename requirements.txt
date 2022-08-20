@@ -8,5 +8,8 @@ gunicorn
 djangorestframework-simplejwt
 djoser
 segno
+<<<<<<< HEAD
 celery
 python-telegram-bot
+=======
+>>>>>>> df0a377afbecdadb2adaeb3894dd355bb1234f0d
