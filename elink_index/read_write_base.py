@@ -1,4 +1,6 @@
 from elink.settings import SITE_NAME, REDIS_BASE_FOR_LINK as REDIS_BASE
+from django.core.cache import cache
+from elink.server_stat import ServerStat
 from django.core.exceptions import ObjectDoesNotExist
 from .generator_code import GeneratorShortCode
 from .qr_generator import QrGenerator
@@ -32,9 +34,11 @@ class RedisLink:
                 'long_link': long_link
             }
             return data
-        except AttributeError:
+        except AttributeError as e:
+            ServerStat.reported(f'Redis_reader_38_short_code={short_code}', f'текст ошибки AttributeError: {e}')
             return False
-        except IndexError:
+        except IndexError as e:
+            ServerStat.reported(f'Redis_reader_41_short_code={short_code}', f'текст ошибки IndexError: {e}')
             return False
 
 
@@ -44,7 +48,8 @@ class PostgresLink:
         if 'p' in str(short_code):
             try:
                 obj = LinkRegUser.objects.get(short_code=short_code)
-            except ObjectDoesNotExist:
+            except ObjectDoesNotExist as e:
+                ServerStat.reported(f'Postgres_reader_52_short_code={short_code}', f'Попытка взять из базы не существующий short_code {e}')
                 return False
             return obj
         return False

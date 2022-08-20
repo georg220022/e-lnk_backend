@@ -11,6 +11,8 @@ from .user_limit import UserLimit
 from .permissions import Permissons
 from django.db.models import Q
 from .cache_module import Cache_module
+from django.core.cache import cache
+from elink.server_stat import ServerStat
 
 
 class PostlinkViewset(viewsets.ModelViewSet):
@@ -38,7 +40,7 @@ class PostlinkViewset(viewsets.ModelViewSet):
                 }
                 serializer = LinkAuthSerializer(data=request.data,        # Если юзер авторизован - отправляем на сериализацию
                                                 context=context)  # с последующей записью в PostgreSQL
-                if serializer.is_valid(raise_exception=False):
+                if serializer.is_valid(raise_exception=True):
                     serializer.save()
                     request.user.link_count += 1
                     request.user.save()
@@ -49,6 +51,7 @@ class PostlinkViewset(viewsets.ModelViewSet):
                                 status=status.HTTP_400_BAD_REQUEST)
                 #data = {'error': 'Учетная запись не активирована. Перейдите по ссылке которая была отправлена по почте при регистрации.'}
                 #return Response(data, status=status.HTTP_400_BAD_REQUEST)
+        ServerStat.reported(f'PostlinkViewset_54_{request.user.email}', 'Скорее всего одно из полей не пришло(или не валидно)')
         data = {'msg': 'Ссылка не прошла проверку или поле не заполнено'}
         return Response(data, status=status.HTTP_400_BAD_REQUEST)
 
@@ -58,6 +61,7 @@ class PostlinkViewset(viewsets.ModelViewSet):
             object_postgres = PostgresLink.reader(request, obj)
             if object_postgres is not False:
                 return Response(object_postgres, status=status.HTTP_200_OK)
+        ServerStat.reported('PostlinkViewset_64', 'Введен не верный пароль')
         return redirect(SITE_NAME) # НАПИСАТЬ ВОЗВРАЩЕНИЕ НЕ ВЕРНО ПАРОЛЯ ЕСЛИ ЧЕЛ ШАЛИТ
 
     def delete_link(self, request):
@@ -72,6 +76,7 @@ class PostlinkViewset(viewsets.ModelViewSet):
                 Cache_module.deleter(author.id, id_data)
                 return Response(status=status.HTTP_200_OK)
         msg = {'error': 'Вы не владелец ссылки, либо объекта(ов) не существует'}
+        ServerStat.reported(f'PostlinkViewset_79_{request.user.email}', 'Попытка удалить не свою ссылку')
         return Response(msg, status=status.HTTP_403_FORBIDDEN)
 
     def update_description(self, request):
@@ -84,4 +89,5 @@ class PostlinkViewset(viewsets.ModelViewSet):
             return Response(status=status.HTTP_200_OK)
         msg = {'error': 'Ошибка реактирования, макс длинна' +
                         'описания 1000 символов. Либо вы не владелец объекта'}
+        ServerStat.reported(f'PostlinkViewset_92_{request.user.email}', 'неудачная попытка изменения поля description(name)')
         return Response(msg, status=status.HTTP_403_FORBIDDEN)

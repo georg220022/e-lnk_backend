@@ -16,7 +16,6 @@ class RegistrationSerializer(serializers.ModelSerializer):
         fields = ['email', 'password']
 
     def create(self, validated_data):
-        print({**validated_data})
         user = User.objects.create_user(**validated_data)
         user.public_key = str(user.id) + str(GeneratorId.public_id())
         user.save()

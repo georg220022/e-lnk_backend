@@ -3,8 +3,10 @@ Django==3.2
 django-redis
 geoip2
 python-dotenv
-psycopg2-binary==2.8.6
+psycopg2
 gunicorn
-djangorestframework-simplejwt==4.7.2
+djangorestframework-simplejwt
 djoser
 segno
+celery
+python-telegram-bot

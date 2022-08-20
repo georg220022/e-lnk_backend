@@ -2,9 +2,10 @@ from django.utils import timezone
 from elink_index.models import LinkRegUser, InfoLink
 from .country_get import DetectCountry
 from django.shortcuts import get_object_or_404
+from django.core.cache import cache
+from elink.server_stat import ServerStat
+from datetime import datetime
 import time
-
-NoneType = type(None)
 
 
 class CheckLink:
@@ -36,7 +37,7 @@ class CheckLink:
             return 1
         elif 'windows' in device_name:
             return 2
-        if 'iphone' in device_name:
+        elif 'iphone' in device_name:
             return 3
         elif ('mac' and 'pad') in device_name:
             return 4
@@ -45,19 +46,20 @@ class CheckLink:
         elif 'mac' in device_name:
             return 6
         else:
+            ServerStat.reported('CheckLink_50', f'Определение устройства не удалось obj={device_name}')
             return 7
 
     def check_date_link(obj):                                                 # Проверяем даты открытия-закрытия доступа к ссылке
         now = timezone.now()
         start = obj.start_link
         stop = obj.date_stop
-        if ((type(start) == type(now) and start > now) or
-           (type(stop) == type(now) and stop < now)):
+        if ((isinstance(start, datetime) and start > now) or
+           (isinstance(stop, datetime) and stop > now)):
             return False
         return True
 
-    def check_pass(obj):                                                       # Стоит ли пароль на ссылке
-        if str(obj.secure_link) == '': # or (str(obj.secure_link) == str(data['linkPassword'])):
+    def check_pass(obj):
+        if str(obj.secure_link) == '':
             return True
         return False
 
@@ -65,14 +67,15 @@ class CheckLink:
         try:
             len_code = len(str(obj['shortCode']))
             len_pass = len(str(obj['linkPassword']))
-            if (len_code and len_pass) < 15 and (len_code and len_pass) > 0:
+            if (len_code and len_pass) < 17 and (len_code and len_pass) > 0:
                 data = {
                     "shortCode": str(obj['shortCode']),
                     "linkPassword": str(obj['linkPassword'])
                     }
                 return data
             return False
-        except KeyError:
+        except KeyError as e:
+            ServerStat.reported('CheckLink_79', f'Не получен один из требуемых объектов obj={obj}, текст ошибки: {e}')
             return False
 
     def collect_stats(request_obj, obj):
@@ -85,7 +88,7 @@ class CheckLink:
         else:
             obj.how_many_clicked += 1
         InfoLink.objects.create(link_check=obj,
-                                country_check_id=country,
+                                country=country,
                                 date_check=date_check,
                                 device_id=device_id)
         obj.save()

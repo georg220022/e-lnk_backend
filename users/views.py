@@ -1,5 +1,6 @@
 import base64
 import json
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import BlacklistMixin, RefreshToken
 from rest_framework import status, viewsets, permissions, generics
@@ -12,6 +13,8 @@ from elink.settings import REDIS_FOR_ACTIVATE, SITE_NAME
 from .send_mail import RegMail
 from .public_id_generator import GeneratorId
 from .models import User
+from elink.server_stat import ServerStat
+from django.core.cache import cache
 from .serializers import (RegistrationSerializer,
                           ChangePasswordSerializer)
 
@@ -32,11 +35,12 @@ class CustomRefresh(viewsets.ViewSet, BlacklistMixin):
             message = message_bytes.decode('ascii')
             message = json.loads(message)
             public_key = message.get('user_id', 'юзера_нет')
-        except ValueError: # Вот тут может упасть
+        except ValueError as e: # Вот тут может упасть
             data = {
                     "error": ("Токен обновления доступа не прошел" +
                               "проверку, попробуйте войти снова.")
                     }
+            ServerStat.reported('CustomRefresh_42', f'Не удалось выдать новый токен: {e}')
             return Response(data, status=status.HTTP_401_UNAUTHORIZED)
         user = get_object_or_404(User, public_key=public_key)
         refresh = RefreshToken.for_user(user)
@@ -52,6 +56,7 @@ class CustomRefresh(viewsets.ViewSet, BlacklistMixin):
                 secure=False,  # серв нет поддержки шифрования
                 httponly=True,
                         )
+        cache.incr('refresh_tokens')
         return response
 
 
@@ -99,7 +104,7 @@ class RegistrationAPIView(APIView):
     def post(self, request):
         if request.user.is_anonymous:
             serializer = self.serializer_class(data=request.data)
-            if serializer.is_valid(raise_exception=False):
+            if serializer.is_valid(raise_exception=True):
                 serializer.save()
                 user_instance = serializer.instance
                 refresh = MyTokenObtainPairSerializer.get_token(user_instance)
@@ -117,9 +122,14 @@ class RegistrationAPIView(APIView):
                             )
                 data.set_cookie('registration_elink', max_age=2592000)
                 RegMail.send_code(user_instance)
+                cache.incr('new_users')
                 return data
-        return Response({'error': 'Ошибка регистрации'},
-                        status=status.HTTP_400_BAD_REQUEST)
+        if serializer.errors.get("email", False):
+            msg = {'error': 'Пользователь с таким email уже существует'}
+        else:
+            ServerStat.reported('RegistrationAPIView_129', f'Ошибка регистрации: {serializer.errors}')
+            msg = {'error': 'Ошибка регистрации, обратитесь в поддержку'}
+        return Response(msg, status=status.HTTP_400_BAD_REQUEST)
 
 
 class EntersOnSite(viewsets.ViewSet):
@@ -137,14 +147,19 @@ class EntersOnSite(viewsets.ViewSet):
             email = request.data.get('email', False)
             pswrd = request.data.get('password', False)
             if (email and pswrd) is not False:
-                user = get_object_or_404(User, email=str(email))
+                try:
+                    user = User.objects.get(email=str(email))
+                except ObjectDoesNotExist:
+                    msg = 'Email не найден в базе'
+                    return Response({"error": msg},
+                                    status=status.HTTP_400_BAD_REQUEST)
                 status_login = user.check_password(str(pswrd))
                 if status_login is True:
                     refresh = RefreshToken.for_user(user)
                     data = {
                         'email': user.email,
                         'access': str(refresh.access_token),
-                        'refresh': str(refresh)
+                        # 'refresh': str(refresh)
                         }
                     new_resp = Response(data, status=status.HTTP_200_OK)
                     new_resp.set_cookie(
@@ -154,9 +169,15 @@ class EntersOnSite(viewsets.ViewSet):
                             secure=False,  # Изменить на сервере
                             httponly=True,
                         )
+                    cache.incr('good_enter')
                     return new_resp
-        msg = {"error": "Ошибка входа, обратитесь в поддержку"}
-        return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    msg = 'Не верный пароль'
+            else:
+                msg = 'Не верный емейл или пароль'
+        err = {"error": msg}
+        cache.incr('bad_enter')
+        return Response(err, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ActivateAccount(viewsets.ViewSet):
@@ -177,5 +198,7 @@ class ActivateAccount(viewsets.ViewSet):
                         REDIS_FOR_ACTIVATE.delete(id)
                         response = redirect(SITE_NAME)
                         response.delete_cookie('registration_elink')
+                        cache.incr('activated')
                         return response
+        cache.incr('bad_try_activated')
         return redirect(SITE_NAME + '404.html')

@@ -1,6 +1,7 @@
 from django.core.mail import send_mail
 from .public_id_generator import GeneratorId as Generator_activation_code
 from elink.settings import REDIS_FOR_ACTIVATE
+from django.core.cache import cache
 
 
 class RegMail:
@@ -26,6 +27,7 @@ class RegMail:
         from_email = 'registration@e-lnk.ru'
         recipient_list = [str(user_instance)]
         REDIS_FOR_ACTIVATE.set(user_instance.id, activation_code, 2600000)
+        cache.incr('send_msg_email')
         send_mail(subject=subject, message=message,
                   from_email=from_email,
                   recipient_list=recipient_list)

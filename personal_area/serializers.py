@@ -6,7 +6,7 @@ from elink.settings import SITE_NAME
 
 class StatSerializer(serializers.ModelSerializer):
 
-    statistic = serializers.SerializerMethodField(read_only=True)
+    statistics = serializers.SerializerMethodField(read_only=True)
     linkId = serializers.ModelField(model_field=LinkRegUser(
                                     )._meta.get_field('id'))
     shortLink = serializers.SerializerMethodField('get_short_link')
@@ -42,8 +42,26 @@ class StatSerializer(serializers.ModelSerializer):
         short_link = SITE_NAME + obj.short_code
         return short_link
 
-    def get_statistic(self, obj):
+    def get_statistics(self, obj):
         queryset = self.context.filter(link_check__id=obj.id)
+        device = {
+                1: 0, 2: 0, 3: 0,
+                4: 0, 5: 0, 6: 0,
+                7: 0,
+            }
+        for obj in queryset:
+            if obj.device_id in device:
+                device[obj.device_id] += 1
+            else:
+                device[obj.device_id] = 1
+
+        def clicked():
+            clicked = {
+                'mobile': int(device[1])+int(device[3])+int(device[4]),
+                'pc': int(device[2])+int(device[5])+int(device[6]),
+                'other': int(device[7])
+            }
+            return clicked
 
         def country(obj, queryset):
             countrys = {}
@@ -65,17 +83,7 @@ class StatSerializer(serializers.ModelSerializer):
                 return None
             return countrys
 
-        def devices(obj, queryset):
-            device = {
-                1: 0, 2: 0, 3: 0,
-                4: 0, 5: 0, 6: 0,
-                7: 0,
-            }
-            for obj in queryset:
-                if obj.device_id in device:
-                    device[obj.device_id] += 1
-                else:
-                    device[obj.device_id] = 1
+        def devices():
             return device
 
         def hours(obj, queryset):
@@ -94,6 +102,7 @@ class StatSerializer(serializers.ModelSerializer):
 
         return {
             'country': country(obj, queryset),
-            'device': devices(obj, queryset),
-            'hours': hours(obj, queryset)
+            'device': devices(),
+            'hours': hours(obj, queryset),
+            'clicks': clicked()
         }

@@ -3,10 +3,18 @@ import redis
 from pathlib import Path
 from dotenv import load_dotenv
 from datetime import timedelta
-
+from django.core.cache import cache
 
 load_dotenv()
 
+
+TG_CHAT_DATA = [
+                os.getenv('TELEGRAM_CHAT_1'),
+                os.getenv('TELEGRAM_CHAT_2'),
+                os.getenv('TELEGRAM_CHAT_3'),
+                ]
+
+TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 
 ACCESS_TIME = os.getenv('ACCESS_TIME')
 REFRESH_TIME = os.getenv('REFRESH_TIME')
@@ -14,10 +22,10 @@ TIME_SAVE_COOKIE = os.getenv('TIME_SAVE_COOKIE')
 
 CACHE_TABLE = os.getenv('CACHE_TABLE')
 
-APPEND_SLASH = False
+APPEND_SLASH = True
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS')
 SECRET_KEY = os.getenv('SECRET_KEY')
-DEBUG = os.getenv('DEBUG')
+DEBUG = True #os.getenv('DEBUG')
 BASE_DIR = Path(__file__).resolve().parent.parent
 AUTH_USER_MODEL = 'users.User'
 SITE_NAME = os.getenv('SITE_NAME')
@@ -26,8 +34,8 @@ EMAIL_HOST = os.getenv('EMAIL_HOST')
 EMAIL_PORT = os.getenv('EMAIL_PORT')
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
-EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS')
-EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL')
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = True
 
 REDIS_DB_ACTIVATE = os.getenv('REDIS_DB_ACTIVATE')
 REDIS_DB_STAT = os.getenv('REDIS_DB_STAT')
@@ -37,6 +45,7 @@ REDIS_DB = os.getenv('REDIS_DB')
 REDIS_PASS = os.getenv('REDIS_PASS')
 REDIS_LOCATION = os.getenv('REDIS_LOCATION')
 REDIS_DB_CACHE = os.getenv('REDIS_DB_CACHE')
+DB_USER = os.getenv('DB_USER')
 REDIS_FOR_ACTIVATE = redis.StrictRedis(
                                host=REDIS_HOST,
                                port=REDIS_PORT,
@@ -55,6 +64,17 @@ REDIS_BASE_FOR_STAT = redis.StrictRedis(
                                         db=REDIS_DB_STAT,
                                         password=REDIS_PASS,
                                        )
+
+
+CELERY_BROKER_URL = f'redis://:{REDIS_PASS}@redis_db:{REDIS_PORT}/{REDIS_DB_STAT}' # Пока запускаю в докере - redis_db
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+"""CELERY_BEAT_SCHEDULE = {
+    'updater_week_stat': {
+        'task': 'persoal_area.tasks.updater_week_stat',
+        'schedule': crontab(minute="*/1"),
+    },
+}"""
 
 
 INSTALLED_APPS = [
@@ -84,6 +104,12 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'elink.urls'
+
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, '/media/')
 
 TEMPLATES = [
     {
@@ -136,11 +162,7 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -190,3 +212,19 @@ SIMPLE_JWT = {
     'USER_ID_FIELD': 'public_key',
     'JTI_CLAIM': 'jti',
 }
+
+data = {
+        'no_reload_day': 0,
+        'new_users': 0,
+        'send_msg_email': 0,
+        'activated': 0,
+        'guest_link': 0,
+        'reg_link': 0,
+        'redirect': 0,
+        'refresh_tokens': 0,
+        'good_enter': 0,
+        'bad_enter': 0,
+        'bad_try_activated': 0,
+        'reporteds': {}
+    }
+cache.set_many(data)

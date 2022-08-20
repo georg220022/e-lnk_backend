@@ -8,6 +8,8 @@ from django.utils import timezone
 from rest_framework import serializers
 from django.shortcuts import get_object_or_404
 from elink.settings import SITE_NAME
+from django.core.cache import cache
+from elink.server_stat import ServerStat
 
 NoneType = type(None)
 
@@ -70,11 +72,13 @@ class LinkAuthSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         try:                                                                # P.s этот метод гораздо лучше чем проверять каждый раз короткий код на уникальность
             obj = LinkRegUser.objects.create(**validated_data)         # short_code (шанс 1 на 1 000 000 000)
-        except IntegrityError:
+        except IntegrityError as e:
+            ServerStat.reported('LinkAuthSerializer_76', f'создался уже существующий short_code! текст ошибки IntegrityError: {e}')
             validated_data.pop('short_code', None)
             short_code = (GeneratorShortCode.for_postgresql() * 6)          # Только тогда выбросим исключение уникальности поля БД
             obj = LinkRegUser.objects.create(**validated_data,              # и сгенерируем новый short_code с бОльшей длинной....             # тут уже скорее вселенная схлопнется нежели совпадут 2 строки
                                              short_code=short_code)
+            ServerStat.reported('LinkAuthSerializer_81', f'Конфликтующий ключ заменен успешно {short_code}, id={obj.id}')
         obj.save()
         return obj
 
