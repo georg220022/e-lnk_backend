@@ -1,15 +1,17 @@
-djangorestframework
-Django==3.2
-django-redis
-geoip2
+djangorestframework==3.13.1
+Django==4.1
+django-redis==5.2.0
+geoip2==4.6.0
+gunicorn==20.1.0
+djangorestframework-simplejwt==5.2.0
+celery==5.2.7
+fpdf2==2.5.6
 python-dotenv
 psycopg2
-gunicorn
-djangorestframework-simplejwt
-djoser
 segno
-<<<<<<< HEAD
-celery
 python-telegram-bot
-=======
->>>>>>> df0a377afbecdadb2adaeb3894dd355bb1234f0d
+django-debug-toolbar
+django-debug-toolbar-force
+django-jazzmin
+django-cors-headers
+psutil

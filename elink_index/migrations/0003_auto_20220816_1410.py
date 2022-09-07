@@ -6,16 +6,19 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('elink_index', '0002_initial'),
+        ("elink_index", "0002_initial"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='infolink',
-            options={'ordering': ['-date_check']},
+            name="infolink",
+            options={"ordering": ["-date_check"]},
         ),
         migrations.AlterModelOptions(
-            name='linkreguser',
-            options={'ordering': ['-date_add'], 'verbose_name_plural': 'Ссылки от зарегестрированных пользователей'},
+            name="linkreguser",
+            options={
+                "ordering": ["-date_add"],
+                "verbose_name_plural": "Ссылки от зарегестрированных пользователей",
+            },
         ),
     ]

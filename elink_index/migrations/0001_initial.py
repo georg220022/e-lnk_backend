@@ -7,39 +7,65 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='InfoLink',
+            name="InfoLink",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date_check', models.DateTimeField(db_index=True)),
-                ('country', models.CharField(blank=True, db_index=True, max_length=1000, null=True)),
-                ('device_id', models.PositiveSmallIntegerField(db_index=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("date_check", models.DateTimeField(db_index=True)),
+                (
+                    "country",
+                    models.CharField(
+                        blank=True, db_index=True, max_length=1000, null=True
+                    ),
+                ),
+                ("device_id", models.PositiveSmallIntegerField(db_index=True)),
             ],
         ),
         migrations.CreateModel(
-            name='LinkRegUser',
+            name="LinkRegUser",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('long_link', models.TextField(db_index=True, max_length=5000)),
-                ('short_code', models.CharField(db_index=True, max_length=20)),
-                ('date_add', models.DateTimeField(blank=True)),
-                ('description', models.CharField(blank=True, max_length=1000, null=True)),
-                ('limited_link', models.IntegerField(blank=True, default=-1)),
-                ('secure_link', models.CharField(blank=True, max_length=10)),
-                ('start_link', models.DateTimeField(blank=True, null=True)),
-                ('date_stop', models.DateTimeField(blank=True, null=True)),
-                ('how_many_clicked', models.IntegerField(db_index=True, default=0)),
-                ('again_how_many_clicked', models.IntegerField(db_index=True, default=0)),
-                ('public_stat_full', models.BooleanField(default=False, null=True)),
-                ('public_stat_small', models.BooleanField(default=False, null=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("long_link", models.TextField(db_index=True, max_length=5000)),
+                ("short_code", models.CharField(db_index=True, max_length=20)),
+                ("date_add", models.DateTimeField(blank=True)),
+                (
+                    "description",
+                    models.CharField(blank=True, max_length=1000, null=True),
+                ),
+                ("limited_link", models.IntegerField(blank=True, default=-1)),
+                ("secure_link", models.CharField(blank=True, max_length=10)),
+                ("start_link", models.DateTimeField(blank=True, null=True)),
+                ("date_stop", models.DateTimeField(blank=True, null=True)),
+                ("how_many_clicked", models.IntegerField(db_index=True, default=0)),
+                (
+                    "again_how_many_clicked",
+                    models.IntegerField(db_index=True, default=0),
+                ),
+                ("public_stat_full", models.BooleanField(default=False, null=True)),
+                ("public_stat_small", models.BooleanField(default=False, null=True)),
             ],
             options={
-                'verbose_name_plural': 'Ссылки от зарегестрированных пользователей',
-                'ordering': ['date_add'],
+                "verbose_name_plural": "Ссылки от зарегестрированных пользователей",
+                "ordering": ["date_add"],
             },
         ),
     ]

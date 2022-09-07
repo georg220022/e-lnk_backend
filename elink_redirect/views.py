@@ -1,31 +1,78 @@
-from elink_index.read_write_base import RedisLink, PostgresLink
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
+from django.http import HttpRequest
+from django.core.cache import cache
+
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import AllowAny
+from rest_framework.decorators import api_view, throttle_classes, permission_classes
+
+from service.read_write_base import RedisLink, PostgresLink
+from service.stat_get import StatisticGet
 from elink.settings import SITE_NAME, TIME_SAVE_COOKIE
 from elink_index.validators import CheckLink
-#from django.http import HttpResponse
-#from django.shortcuts import render
-from django.template.response import TemplateResponse
-from django.shortcuts import render
+
+from .throttle import PassAnonymousThrottle, PassLinkUserThrottle
 
 
-def open_link(request, short_code):
+def open_link(request: HttpRequest, short_code: str) -> Response:
+    # cache.clear() # {ХУЕТА КАКАЯ ТО}
     if len(str(short_code)) == 11 or len(str(short_code)) == 66:
         object_redis = RedisLink.reader(short_code)
         if object_redis:
-            return redirect(object_redis['long_link'])
-        object_postgres = PostgresLink.reader(request, short_code)
+            cache.incr("server_redis_redirect")
+            return redirect(object_redis["long_link"])
+        object_postgres = PostgresLink.reader(short_code)
         if object_postgres is not False:
             if not CheckLink.check_date_link(object_postgres):
-                return render(request, '404.html')#redirect(SITE_NAME + '/badtime')
+                return render(request, "404.html")  # redirect(SITE_NAME + "/badtime")
             if not CheckLink.check_pass(object_postgres):
-                return redirect(SITE_NAME +
-                                f'/password-check?short_code={short_code}')
+                data = {
+                    "short_code": object_postgres.short_code,
+                    "long_link": object_postgres.long_link,
+                    "password": object_postgres.secure_link,
+                    "limited_link": object_postgres.limited_link,
+                    "id": object_postgres.id,
+                }
+                cache.set(f"open_{object_postgres.short_code}", data, 1200)
+                return redirect(SITE_NAME + f"/password-check.html?open_{short_code}")
             else:
                 if not CheckLink.check_limited(object_postgres):
-                    return redirect(SITE_NAME + '/end_limit')
-                CheckLink.collect_stats(request, object_postgres)
+                    return redirect(SITE_NAME + "/end_limit")
+                StatisticGet.collect_stats(request, object_postgres)
                 response = redirect(object_postgres.long_link)
-                response.set_cookie(f"{object_postgres.short_code}",
-                                    max_age=int(TIME_SAVE_COOKIE))
+                response.set_cookie(
+                    f"{object_postgres.short_code}", max_age=int(TIME_SAVE_COOKIE)
+                )
                 return response
-    return render(request, '404.html')
+    cache.incr("server_open_bad_link")
+    return render(request, "404.html")
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+@throttle_classes([PassLinkUserThrottle, PassAnonymousThrottle])
+def unlock_pass(request: HttpRequest) -> Response:
+    short_code = request.data.get("short_code", False)
+    passwd = request.data.get("password", False)
+    if passwd and short_code:
+        obj = cache.get(f"open_{short_code}")
+        if obj:
+            if str(obj["password"]) == passwd:
+                if not CheckLink.check_limited(obj, secure=True):
+                    return redirect(SITE_NAME + "/end_limit")
+                StatisticGet.collect_stats(request, obj, secure=True)
+                response = redirect(obj["long_link"])
+                response.set_cookie(obj["short_code"], max_age=int(TIME_SAVE_COOKIE))
+                cache.incr("server_good_input_pass")
+                return response
+            data = {"error": "Пароль не верный"}
+        else:
+            data = {
+                "error": "Вермя ввода пароля истекло, откроте изначальную ссылку вновь"
+            }
+            cache.incr("server_bad_input_pass")
+        return Response(data, status=status.HTTP_400_BAD_REQUEST)
+    cache.incr("server_empty_pass_open_lnk")
+    data = {"error": "Отсутствует поле или получено пустое значение"}
+    return Response(data, status=status.HTTP_400_BAD_REQUEST)

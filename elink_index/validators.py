@@ -1,104 +1,88 @@
 from django.utils import timezone
-from elink_index.models import LinkRegUser, InfoLink
-from .country_get import DetectCountry
 from django.shortcuts import get_object_or_404
-from django.core.cache import cache
-from elink.server_stat import ServerStat
+from service.server_stat import ServerStat
 from datetime import datetime
-import time
+from .models import LinkRegUser
+from typing import Dict, Union
+from django.http import HttpRequest
+from django.core.cache import cache
 
 
 class CheckLink:
-
-    @classmethod  # Класс метод под вопросом
-    def get_long_url(cls, request_data) -> bool:
-        long_link = request_data.data.get('longLink', False)
+    @staticmethod  # Класс метод под вопросом
+    def get_long_url(request_data: Dict) -> Union[bool, str]:
+        long_link = request_data.get("longLink", False)
         if long_link and len(long_link) < 5001:
-            if 'https://' == long_link[0:8] or 'http://' == long_link[0:7]:
+            if "https://" == long_link[0:8] or "http://" == long_link[0:7]:
                 return long_link
             else:
-                long_link = 'http://' + long_link
+                long_link = "http://" + long_link
                 return long_link
+        cache.incr("server_no_long_link")
         return False
 
-    def check_limited(obj) -> bool:
-        if obj.limited_link <= -1:
+    @staticmethod
+    def check_limited(obj: LinkRegUser, secure=False) -> bool:
+        if not secure:
+            limited_link = obj.limited_link
+        else:
+            limited_link = obj["limited_link"]
+        if limited_link <= -1:
             return True
-        elif obj.limited_link >= 1:
+        elif limited_link >= 1:
             obj.limited_link = obj.limited_link - 1
             obj.save()
             return True
         else:
             return False
 
-    def check_device(request_meta):
-        device_name = request_meta['HTTP_USER_AGENT'].lower()
-        if 'android' in device_name:
-            return 1
-        elif 'windows' in device_name:
-            return 2
-        elif 'iphone' in device_name:
-            return 3
-        elif ('mac' and 'pad') in device_name:
-            return 4
-        elif 'linux' in device_name:
-            return 5
-        elif 'mac' in device_name:
-            return 6
-        else:
-            ServerStat.reported('CheckLink_50', f'Определение устройства не удалось obj={device_name}')
-            return 7
+    @staticmethod
+    def check_pass(obj: LinkRegUser) -> bool:
+        if str(obj.secure_link) == "":
+            return True
+        cache.incr("server_check_pass")
+        return False
 
-    def check_date_link(obj):                                                 # Проверяем даты открытия-закрытия доступа к ссылке
+    @staticmethod
+    def check_date_link(obj: LinkRegUser) -> bool:
         now = timezone.now()
         start = obj.start_link
         stop = obj.date_stop
-        if ((isinstance(start, datetime) and start > now) or
-           (isinstance(stop, datetime) and stop > now)):
+        if (isinstance(start, datetime) and start > now) or (
+            isinstance(stop, datetime) and stop > now
+        ):
+            cache.incr("server_open_bad_time")
             return False
         return True
 
-    def check_pass(obj):
-        if str(obj.secure_link) == '':
-            return True
-        return False
-
-    def check_request(obj):
+    @staticmethod
+    def check_request(obj: LinkRegUser) -> Union[bool, dict]:
         try:
-            len_code = len(str(obj['shortCode']))
-            len_pass = len(str(obj['linkPassword']))
+            len_code = len(str(obj["shortCode"]))
+            len_pass = len(str(obj["linkPassword"]))
             if (len_code and len_pass) < 17 and (len_code and len_pass) > 0:
                 data = {
-                    "shortCode": str(obj['shortCode']),
-                    "linkPassword": str(obj['linkPassword'])
-                    }
+                    "shortCode": str(obj["shortCode"]),
+                    "linkPassword": str(obj["linkPassword"]),
+                }
                 return data
             return False
         except KeyError as e:
-            ServerStat.reported('CheckLink_79', f'Не получен один из требуемых объектов obj={obj}, текст ошибки: {e}')
+            ServerStat.reported(
+                "CheckLink_79",
+                "Не получен один из требуемых объектов"
+                + f" obj={obj}, текст ошибки: {e}",
+            )
+            cache.incr("server_bad_data")
             return False
 
-    def collect_stats(request_obj, obj):
-        date_check = time.strftime("%Y-%m-%d %H:%M")
-        device_id = CheckLink.check_device(request_obj.META)
-        country = DetectCountry.get_client_ip(request_obj)
-        if f'{obj.short_code}' in request_obj.COOKIES:
-            obj.how_many_clicked += 1
-            obj.again_how_many_clicked += 1
-        else:
-            obj.how_many_clicked += 1
-        InfoLink.objects.create(link_check=obj,
-                                country=country,
-                                date_check=date_check,
-                                device_id=device_id)
-        obj.save()
-
-    def description(request):
-        obj_id = request.data.get('shortCodes', False)
+    def description(request_obj: HttpRequest) -> Union[bool, LinkRegUser]:
+        obj_id = request_obj.data.get("shortCodes", False)
         link_obj = get_object_or_404(LinkRegUser, short_code=obj_id)
-        if request.user.id == link_obj.author.id:
-            obj_descrip = request.data.get('linkDescription', False)
+        if request_obj.user.id == link_obj.author.id:
+            obj_descrip = request_obj.data.get("linkDescription", False)
             if obj_descrip is not False:
-                if len(obj_descrip) > 0 and len(obj_descrip) <= 1000:
+                if len(obj_descrip) > 0 and len(obj_descrip) <= 25:
                     return link_obj
+        cache.incr("server_bad_edit_descrip")
         return False

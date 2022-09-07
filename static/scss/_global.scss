@@ -1,0 +1,420 @@
+:root {
+  scroll-behavior: smooth;
+}
+
+::selection {
+  color: $primary;
+  background: $accent;
+}
+
+::placeholder {
+  color: $gray;
+  font-family: inherit;
+  font-size: rem(18);
+}
+
+%img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+%bg {
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+%img-bg {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -28;
+  object-fit: cover;
+  object-position: center;
+}
+
+input[type=number] {
+  -moz-appearance: textfield;
+}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+}
+
+input {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+body {
+  font-family: $fontMain;
+  color: $primary;
+  font-size: rem(18);
+  line-height: 1.1;
+  font-weight: 400;
+}
+
+.body-wrapper {
+  background-image: linear-gradient(180deg, rgba(0, 117, 255, 0.38) 3.74%, rgba(0, 194, 255, 0.38) 21.16%, rgba(255, 255, 255, 0.38) 44.17%);
+  background-repeat: no-repeat;
+  min-height: 100%;
+  padding: rem(64) rem(64) 0;
+  overflow-x: hidden;
+
+  @media (max-width: $breakpoint768) {
+    padding: rem(32);
+  }
+  @media (max-width: $breakpoint390) {
+    padding: rem(32) 0;
+  }  
+}
+
+.container {
+  max-width: calc($container-width + $container-padding);
+  padding: 0 $container-side-padding;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.wrapper {
+  margin: 0 auto;
+  max-width: calc($container-width + $container-padding);
+  min-height: rem(200);
+  background-color: $secondary;
+  box-shadow: 0 rem(4) rem(60) rgba(0, 0, 0, 0.25);
+  border-radius: rem(50);
+  padding: rem(32) rem(48);
+
+  @media (max-width: $breakpoint768) {
+    padding: rem(32) rem(16);
+  }
+
+  @media (max-width: $breakpoint576) {
+    padding: rem(32) 0;
+  }
+}
+
+h1 {
+  color: $accent;
+  font-size: rem(36);
+}
+
+h2 {
+  color: $accent;
+  font-size: rem(24);
+}
+
+.preloader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  visibility: visible;
+  opacity: 1;
+  z-index: 101;
+  overflow: hidden;
+  background-color: $secondary;
+  transition: all 0.1s ease-out;
+
+  &.preloader--hide {
+    visibility: hidden;
+    opacity: 0;
+    z-index: -99;
+  }
+}
+
+.preloader-loader {
+  display: block;
+  position: relative;
+  width: rem(100);
+  height: rem(100);
+  border-radius: rem(50);
+  background-color: transparent;
+  pointer-events: none;
+  user-select: none;
+  z-index: 101;
+  animation: rotate 1s linear infinite;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    border: rem(5) solid $accent;
+    background-color: transparent;
+    border-radius: 50%;
+    animation: slowFilling 2s linear infinite;
+  }
+}
+
+.logo {
+  font-family: 'Roboto';
+  font-weight: 500;
+  font-size: rem(36);
+  color: $accent;
+}
+
+.button {
+  display: inline-block;
+  font-size: rem(18);
+  color: $accent;
+  background-color: $secondary;
+  border-radius: rem(30);
+  border: 1px solid $accent;
+  box-shadow: 0 rem(2) rem(4) rgba(0, 0, 0, 0.1);
+  padding: rem(10) rem(20);
+  cursor: pointer;
+  user-select: none;
+  transition: $hover;
+
+  @media (hover: hover) { 
+    &:hover {
+      color: $secondary;
+      background-color: $accent;
+    }
+  }
+
+  &:active {
+    background-color: darken($accent, 15%);
+  }
+
+  &.loader {
+    width: rem(40);
+    height: rem(40);
+    border: none;
+    box-shadow: none;
+  }
+}
+
+.button--main {
+  display: inline-block;
+  font-size: rem(18);
+  color: $secondary;
+  background-color: $accent;
+  padding: rem(10) rem(20);
+  border: 1px solid $accent;
+  box-shadow: 0 rem(2) rem(4) rgba(0, 0, 0, 0.1);
+  border-radius: rem(30);
+  cursor: pointer;
+  user-select: none;
+  transition: $hover;
+
+  @media (hover: hover) { 
+    &:hover {
+      background-color: darken($accent, 10%);
+    }
+  }
+
+  &:active {
+    background-color: darken($accent, 15%);
+  }
+
+  &.loader {
+    width: rem(40);
+    height: rem(40);
+    border: none;
+    box-shadow: none;
+  }
+}
+
+.qr-body {
+  visibility: hidden;
+  opacity: 0;
+  transition: all 0.1s linear;
+
+  &.open {
+    display: block;
+    visibility: visible;
+    opacity: 1;
+    animation: slideDown 0.3s;
+  }
+
+  @media (max-width: $breakpoint1366) {
+    display: none;
+  }
+}
+
+.qr-img-wrapper {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  width: rem(166);
+  height: rem(166);
+  padding: rem(16);
+  border: 1px solid $accent;
+  border-radius: rem(10);
+
+  @media (max-width: $breakpoint1366) {
+    margin: 0 auto;
+  }
+}
+  
+.qr-img {
+  @extend %img;
+}
+
+.lock {
+  overflow: hidden;
+  width: 100%;
+  height: 100vh;
+  transition: all 0.3s ease;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.visually-hidden {
+  position: fixed;
+  opacity: 0;
+  z-index: -100;
+}
+
+.disabled {
+  pointer-events: none;
+  color: #666;
+}
+
+input[disabled] {
+  user-select: none;
+}
+
+.error-label {
+  display: block;
+  font-size: rem(14);
+  color: $error;
+  text-align: left;
+  margin: rem(10) 0;
+  margin-right: auto;
+  padding-left: rem(20);
+  pointer-events: none;
+}
+
+.error-input:focus {
+  box-shadow: none !important;
+}
+
+.error-input {
+  border: 1px solid $error !important;
+}
+
+.loader {
+  pointer-events: none;
+  border: none;
+  box-shadow: none;
+  background-color: transparent;
+  animation: rotate 1s linear infinite;
+  transition: border background-color 0.1s linear;
+  
+  & svg {
+    opacity: 0;
+    transition: opacity 0.1s linear;
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 4px;
+    border: 2px solid $gray;
+    background-color: transparent;
+    border-radius: 50%;
+    animation: slowFilling 2s linear infinite;
+  }
+}
+
+@keyframes rotate {
+  0% {overflow: hidden;}
+  100% {transform: rotate(360deg);}
+}
+
+@keyframes slowFilling {
+  0% {clip-path:polygon(50% 50%,0 0,0 0,0 0,0 0,0 0);}
+  25% {clip-path:polygon(50% 50%,0 0,100% 0,100% 0,100% 0,100% 0);}
+  50% {clip-path:polygon(50% 50%,0 0,100% 0,100% 100%,100% 100%,100% 100%);}
+  75% {clip-path:polygon(50% 50%,0 0,100% 0,100% 100%,0 100%,0 100%);}
+  100% {clip-path:polygon(50% 50%,0 0,100% 0,100% 100%,0 100%,0 0);}
+}
+
+
+.checkmark {
+  pointer-events: none;
+  border: 1px solid $success;
+  background-color: $success;
+  transition: $hover;
+
+  & svg {
+    opacity: 0;
+    transition: opacity 0.1s linear;
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    height: rem(14);
+    width: rem(8);
+    opacity: 1;
+    transform-origin: left top;
+    border-right: 2px solid $secondary;
+    border-top: 2px solid $secondary;
+    top: rem(20);
+    right: rem(18);
+    animation: showCheckmark ease 0.5s;
+    transform: scaleX(-1) rotate(135deg);
+  }
+}
+
+@keyframes showCheckmark {
+  0% {
+    height: 0;
+    width: 0;
+    opacity: 1;
+  }
+  20% {
+    height: rem(6);
+    width: rem(4);
+    opacity: 1;
+  }
+  40% {
+    height: rem(10);
+    width: rem(6);
+    opacity: 1;
+  }
+  100% {
+    height: rem(14);
+    width: rem(8);
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  0% { 
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-20%);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }  
+}
+
+@keyframes slideUp {
+  0% { 
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(50%);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }  
+}

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import User
-from .public_id_generator import GeneratorId
+from service.generator_code import GeneratorCode as GeneratorId
 
 
 class ChangePasswordSerializer(serializers.Serializer):
@@ -10,10 +10,9 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = User
-        fields = ['email', 'password']
+        fields = ["email", "password"]
 
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)

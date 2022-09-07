@@ -1,0 +1,33 @@
+$fontMain: 'Roboto', sans-serif;
+
+$primary: #353642;
+$secondary: #fff;
+$accent: #3d96e5;
+$gray: #7c7c7c;
+$success: #0cbc8b;
+$error: #c92c2c;
+
+$hover: all 0.2s ease;
+
+
+$container-width: rem(1400);
+$container-padding: 2rem;
+$container-side-padding: calc($container-padding / 2);
+
+
+$breakpoint1440: 1439.98px;
+$breakpoint1366: 1365.98px;
+$breakpoint992: 991.98px;
+$breakpoint768: 767.98px;
+$breakpoint576: 575.98px;
+$breakpoint390: 389.98px;
+
+
+$burger-width: rem(25);
+$burger-height: rem(20);
+$burger-line-height: rem(2);
+$burger-color: $accent;
+$burger-breakpoint: $breakpoint992;
+
+$burger-menu-color: $secondary;
+$burger-menu-width: 100%;

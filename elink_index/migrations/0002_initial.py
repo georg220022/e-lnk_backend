@@ -10,23 +10,33 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('elink_index', '0001_initial'),
+        ("elink_index", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='linkreguser',
-            name='author',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='owner_link', to=settings.AUTH_USER_MODEL),
+            model_name="linkreguser",
+            name="author",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="owner_link",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='infolink',
-            name='link_check',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='link_link', to='elink_index.linkreguser'),
+            model_name="infolink",
+            name="link_check",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="link_link",
+                to="elink_index.linkreguser",
+            ),
         ),
         migrations.AddConstraint(
-            model_name='linkreguser',
-            constraint=models.UniqueConstraint(fields=('short_code',), name='unique_generate_link'),
+            model_name="linkreguser",
+            constraint=models.UniqueConstraint(
+                fields=("short_code",), name="unique_generate_link"
+            ),
         ),
     ]

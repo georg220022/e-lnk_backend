@@ -19,37 +19,6 @@ services:
     ports:
       - 5432:5432
 
-  web:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    restart: always
-    depends_on:
-      - postgres_db
-      - redis_db
-    env_file:
-      - .env
-      
-  nginx:
-    image: nginx:latest
-    restart: always
-    ports:
-      - 8000:8000
-    volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
-    depends_on:
-      - web
-  
-  flower:
-    image: mher/flower
-    environment:
-    - CELERY_BROKER_URL=redis://:GsM10zWmoscow95@redis_db:6379/2
-    - FLOWER_PORT=8888
-    ports:  
-      - 8888:8888
-    depends_on:
-      - web
-      - redis_db
 
   
 

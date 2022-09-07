@@ -3,5 +3,5 @@ from .views import PersonalStat
 
 
 urlpatterns = [
-    path('', PersonalStat.as_view({'get': 'get_full_stat'})),
+    path("", PersonalStat.as_view({"get": "get_full_stat"})),
 ]
