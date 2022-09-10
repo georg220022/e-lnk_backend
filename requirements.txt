@@ -15,4 +15,8 @@ django-debug-toolbar-force
 django-jazzmin
 django-cors-headers
 psutil
+<<<<<<< HEAD
+=======
+celery
+>>>>>>> 3befd5d56b33336aacb5bde4b62d9f1f767b3f95
 python-telegram-bot
