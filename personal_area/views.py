@@ -15,8 +15,39 @@ from elink.settings import stat_data
 
 
 
+
+import datetime
+from telegram import Bot
+from django.db.models import Q
+from django.core.cache import cache
+from celery.schedules import crontab
+from elink.celery import app
+from elink_index.models import InfoLink
+from elink.settings import TG_CHAT_DATA, TELEGRAM_TOKEN, stat_data
+from users.models import User
+
+
+
+
 class PersonalStat(viewsets.ViewSet):
     def get_full_stat(self, request: HttpRequest) -> Response:
+        from datetime import datetime
+
+        z = datetime.now()
+        
+        cache.set(z, 11112222, None)
+        print(cache.get(z))
+        
+        
+        
+        cache.set('goo', 9, None)
+        print(cache.get('goo'))
+        cache.delete_many(["fsdgs", "erwa4", "erw2a4", "erwfa4", "erwaa4", "erwga4", "erwnha4", "ejrwa4", "goo"])
+        print(cache.get('goo'))
+        #z = User.objects.filter
+        #print(cache.get("count_cache_infolink"))
+        #print(cache.get("count_cache_infolink"))
+        #cache.clear()
         old_data = cache.get(request.user.id)
         if old_data:
             cache.incr("server_get_stat_in_cache")

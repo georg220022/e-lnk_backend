@@ -9,14 +9,10 @@ fpdf2==2.5.6
 python-dotenv
 psycopg2
 segno
-<<<<<<< HEAD
 python-telegram-bot
 django-debug-toolbar
 django-debug-toolbar-force
 django-jazzmin
 django-cors-headers
 psutil
-=======
-celery
 python-telegram-bot
->>>>>>> 6ddfdf6856a4a6ff6bf757a1562abff74ab48e17

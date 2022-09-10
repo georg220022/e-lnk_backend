@@ -122,6 +122,6 @@ class TelegramStat:
                 )
         else:
             data_string += "| Замечаний нет.\n"
-        data_service_time = [f'Начало: {key},   Заняло:{value}\n' for key, value in cache.get('time_service').items()]
+        data_service_time = [f'Начало: {key},   Заняло:{value}' for key, value in cache.get('time_service').items()]
         data_string += f"\n Сервисное ежечасное самообслуживание:\n{data_service_time}"
         return data_string

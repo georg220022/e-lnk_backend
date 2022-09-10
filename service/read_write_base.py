@@ -76,7 +76,8 @@ class PostgresLink:
                     "secure_link",
                     "limited_link",
                     "start_link",
-                    "date_stop"
+                    "date_stop",
+                    "author_id"
                 ).get(short_code=short_code)
             except ObjectDoesNotExist:
                 cache.incr("server_pstgrs_obj_doesnt_exist")

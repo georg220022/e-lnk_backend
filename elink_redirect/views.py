@@ -25,7 +25,7 @@ def open_link(request: HttpRequest, short_code: str) -> Response:
         object_postgres = PostgresLink.reader(short_code)
         if object_postgres is not False:
             if not CheckLink.check_date_link(object_postgres):
-                return render(request, "404.html")  # redirect(SITE_NAME + "/badtime")
+                return redirect("https://e-lnk.ru/badtime")
             if not CheckLink.check_pass(object_postgres):
                 data = {
                     "short_code": object_postgres.short_code,
@@ -33,12 +33,15 @@ def open_link(request: HttpRequest, short_code: str) -> Response:
                     "password": object_postgres.secure_link,
                     "limited_link": object_postgres.limited_link,
                     "id": object_postgres.id,
+                    "author_id": object_postgres.author_id
                 }
                 cache.set(f"open_{object_postgres.short_code}", data, 1200)
-                return redirect(SITE_NAME + f"/password-check.html?open_{short_code}")
+                #print('polojili')
+                return redirect(f"https://e-lnk.ru/password-check.html?open_{short_code}")
             else:
                 if not CheckLink.check_limited(object_postgres):
-                    return redirect(SITE_NAME + "/end_limit")
+                    print('kekekekekekekekeekekeekkekkekee')
+                    return redirect("https://e-lnk.ru/end_limit")
                 StatisticGet.collect_stats(request, object_postgres)
                 response = redirect(object_postgres.long_link)
                 response.set_cookie(
@@ -53,16 +56,18 @@ def open_link(request: HttpRequest, short_code: str) -> Response:
 @permission_classes([AllowAny])
 @throttle_classes([PassLinkUserThrottle, PassAnonymousThrottle])
 def unlock_pass(request: HttpRequest) -> Response:
-    short_code = request.data.get("short_code", False)
+    #print(request.data)
+    short_code = request.data.get("shortCode", False)
     passwd = request.data.get("password", False)
     if passwd and short_code:
-        obj = cache.get(f"open_{short_code}")
+        obj = cache.get(short_code)
         if obj:
             if str(obj["password"]) == passwd:
                 if not CheckLink.check_limited(obj, secure=True):
                     return redirect(SITE_NAME + "/end_limit")
                 StatisticGet.collect_stats(request, obj, secure=True)
-                response = redirect(obj["long_link"])
+                datas = {"longLink": obj["long_link"]}
+                response = Response(datas)
                 response.set_cookie(obj["short_code"], max_age=int(TIME_SAVE_COOKIE))
                 cache.incr("server_good_input_pass")
                 return response

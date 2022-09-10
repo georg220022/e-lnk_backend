@@ -207,9 +207,9 @@ class ActivateAccount(viewsets.ViewSet):
                         user.is_active = True
                         user.save()
                         REDIS_FOR_ACTIVATE.delete(id)
-                        response = redirect(SITE_NAME)
+                        response = redirect("https://e-lnk.ru")
                         response.delete_cookie("registration_elink")
                         cache.incr("activated")
                         return response
         cache.incr("server_bad_try_activated")
-        return redirect(SITE_NAME + "404.html")
+        return redirect("https://e-lnk.ru/404")

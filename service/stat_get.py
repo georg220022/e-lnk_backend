@@ -4,6 +4,7 @@ from django.core.cache import cache
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.http import HttpRequest
+from datetime import datetime as dt
 
 from elink_index.models import LinkRegUser, InfoLink
 from service.country_get import DetectCountry
@@ -44,29 +45,30 @@ class StatisticGet:
         country = DetectCountry.get_client_ip(request_obj)
         if cache.get("count_cache_infolink") > 1000:
             WriteStat.one_hour()
-            cache.set("count_cache_infolink", 0, None)
             cache.incr("server_need_clear_cache")
         if not secure:
             short_code = obj.short_code
             ids = obj.id
+            author_id = obj.author_id
         else:
             short_code = obj["short_code"]
             ids = obj["id"]
-        cache.get_or_set(f"statx_click_{ids}", 0, None)
-        cache.incr(f"statx_click_{ids}")
+            author_id = obj["author_id"]
+        if not cache.has_key(f"statx_click_{author_id}_{ids}"):
+            cache.set(f"statx_click_{author_id}_{ids}", 0, 180000)
+        cache.incr(f"statx_click_{author_id}_{ids}")
         if short_code in request_obj.COOKIES:
-            #cache.get_or_set(f"statx_aclick_24_{ids}", 0, None)
-            #cache.incr(f"statx_aclick_24_{ids}", None)
-            cache.get_or_set(f"statx_aclick_{ids}", 0, None)
-            cache.incr(f"statx_aclick_{ids}")
+            if not cache.has_key(f"statx_aclick_{author_id}_{ids}"):
+                cache.set(f"statx_aclick_{author_id}_{ids}", 0, 180000)
+            cache.incr(f"statx_aclick_{author_id}_{ids}")
         data = InfoLink(
             date_check=date_check,
             country=country,
             device_id=device_id,
             link_check_id=ids,
         )
-        cache.set(f"statx_info_{ids}", data, None)
-        cache.incr("server_count_cache_infolink")
+        cache.set(f"statx_info_{dt.now()}", data, 180000)
+        cache.incr("count_cache_infolink")
 
     @staticmethod
     def description(request: HttpRequest) -> Union[LinkRegUser, bool]:

@@ -10,12 +10,15 @@ class UserLimit:
     def create_link(request_user: User) -> Union[bool, dict]:
         if request_user.banned is False:
             #cache.clear()
-            cnt_lnk = cache.get_or_set(f"link_limit_{request_user.id}", "False")
+            cnt_lnk = cache.get_or_set(f"link_limit_{request_user.id}", 1)
             if not isinstance(cnt_lnk, int):
-                obj = int(LinkRegUser.objects.filter(author_id=request_user.id).values_list("author_id").annotate(Count("author_id"))[0][1])
+                print(LinkRegUser.objects.filter(author_id=request_user.id).values_list("author_id").annotate(Count("author_id")))
+                obj = len(LinkRegUser.objects.filter(author_id=request_user.id).values_list("author_id").annotate(Count("author_id")))
+                print(obj)
+
                 cache.set(f"link_limit_{request_user.id}", int(obj), 2600000)
             if request_user.subs_type == "REG":
-                if cnt_lnk < 100:
+                if int(cnt_lnk) < 100:
                     return True
                 cache.incr("server_user_reg_limit_lnk")
                 return {

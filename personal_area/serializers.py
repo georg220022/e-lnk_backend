@@ -41,9 +41,9 @@ class StatSerializer(serializers.ModelSerializer):
     repeatedClicked = serializers.ModelField(
         model_field=LinkRegUser()._meta.get_field("again_how_many_clicked")
     )
-    linkStartDate = serializers.DateTimeField(format="%Y-%m-%dT%H:%MZ", source="start_link") # format="%Y-%m-%dT%H:%M:%S%z",  format="%Y-%m-%dT%H:%M:%S%Z", 
-    linkCreatedDate = serializers.DateTimeField(format="%Y-%m-%dT%H:%MZ", source="date_add")# input_formats=None format="%Y-%m-%dT%H:%M:%S",
-    linkEndDate = serializers.DateTimeField(format="%Y-%m-%dT%H:%MZ", source="date_stop")
+    linkStartDate = serializers.DateTimeField(format="%Y-%m-%dT%H:%MZ", source="start_link", read_only=True) # format="%Y-%m-%dT%H:%M:%S%z",  format="%Y-%m-%dT%H:%M:%S%Z", 
+    linkCreatedDate = serializers.DateTimeField(format="%Y-%m-%dT%H:%MZ", source="date_add", read_only=True)# input_formats=None format="%Y-%m-%dT%H:%M:%S",
+    linkEndDate = serializers.DateTimeField(format="%Y-%m-%dT%H:%MZ", source="date_stop", read_only=True)
     qr = serializers.CharField(read_only=True)
 
     class Meta:
@@ -75,7 +75,13 @@ class StatSerializer(serializers.ModelSerializer):
                 instance.start_link = instance.date_add + user_tz
             if isinstance(instance.date_stop, datetime.datetime):
                 instance.date_stop = instance.date_stop + user_tz
+            else:
+                instance.date_stop = "-1"
             instance.date_add = instance.date_add + user_tz
+            print('huy')
+            
+            #instance.remove('date_stop')
+            print(instance)
         data = super(StatSerializer, self).to_representation(instance)
         return data
 
@@ -119,14 +125,14 @@ class StatSerializer(serializers.ModelSerializer):
             23: 0,
         }
         countrys: Dict = {}
-        for obj in data:
-            device[obj["device_id"]] += 1
-            if obj["country"] in countrys:
-                countrys[obj["country"]] += 1
+        for objs in data:
+            device[objs["device_id"]] += 1
+            if objs["country"] in countrys:
+                countrys[objs["country"]] += 1
             else:
-                countrys[obj["country"]] = 1
-            obj["device"] = device
-            tz_key = int(obj["date_check"].strftime("%H")) + int(user_tz)
+                countrys[objs["country"]] = 1
+            objs["device"] = device
+            tz_key = int(objs["date_check"].strftime("%H")) + int(user_tz)
             if tz_key in hour.keys():
                 hour[tz_key] += 1
             else:
@@ -140,22 +146,26 @@ class StatSerializer(serializers.ModelSerializer):
             "pc": device[2] + device[5] + device[6],
             "other": device[7],
         }
-        if len(obj_lnk) == 0:
-            re_clicked = 0
-        else:
-            re_clicked = cache.get(
-                f"statx_aclick_{obj.id}"                   #  {obj_lnk[0].get("link_check_id", "unknown")}"
-            )
-            if not re_clicked:
-                re_clicked = 0
+        re_clicked_today = cache.get(
+            f"statx_aclick_{obj.author_id}_{obj.id}"                   #  {obj_lnk[0].get("link_check_id", "unknown")}"
+        )
+        print(cache.get(f"statx_aclick_{obj.author_id}_{obj.id}"))
+        clicked_today = cache.get(
+            f"statx_click_{obj.author_id}_{obj.id}"                   #  {obj_lnk[0].get("link_check_id", "unknown")}"
+        )
+        if not isinstance(re_clicked_today, int):
+            re_clicked_today = 0
+        if not isinstance(clicked_today, int):
+            clicked_today = 0
         hour.update({24: 0})
-        if self.context["action"] == "task_celery":
-            cache.delete(f"statx_click_{obj.id}")
-            cache.delete(f"statx_aclick_{obj.id}")
+        #if self.context["action"] == "task_celery":
+        #    cache.delete(f"statx_click_{obj.id}")
+        #    cache.delete(f"statx_aclick_{obj.id}")
         return {
             "country": countrys,
             "device": device,
             "hours": hour,
             "clicks": clicked,
-            "reClicked": int(re_clicked),
+            "reClickedToday": int(re_clicked_today),
+            "clickedToday": int(clicked_today)
         }

@@ -35,10 +35,15 @@ class WriteStat:
         ]
 
     @staticmethod
-    def one_hour() -> dict:
+    def one_hour() -> None:
         InfoLink.objects.bulk_create(
             [*OrderedDict(cache.get_many(cache.keys("statx_info_*"))).values()]
         )
+        cache.delete_pattern("statx_info_*")  # Из за отправки статистики по повторным нажатиям, перенести эту хуету на 00-00 очистку
+        cache.set("count_cache_infolink", 0, None)  # Эту строку в самый низ
+    
+    @staticmethod
+    def end_day() -> None:
         clicks = OrderedDict(cache.get_many(cache.keys("statx_click_*")))
         again_clicks = OrderedDict(cache.get_many(cache.keys("statx_aclick_*")))
         result = {
@@ -56,8 +61,3 @@ class WriteStat:
         LinkRegUser.objects.bulk_update(
             data, ["how_many_clicked", "again_how_many_clicked"]
         )
-        cache.delete_pattern(
-            "statx_*"
-        )  # Из за отправки статистики по повторным нажатиям, перенести эту хуету на 00-00 очистку
-        cache.set("count_cache_infolink", 0, None)  # Эту строку в самый низ
-        return result

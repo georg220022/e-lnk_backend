@@ -29,9 +29,10 @@ ALLOWED_HOSTS = [
     "46.229.214.129",
     "127.0.0.1",
     "e-lnk.ru",
+    "https://e-lnk.ru",
 ]
 SECRET_KEY = os.getenv("SECRET_KEY")
-DEBUG = os.getenv("DEBUG")
+DEBUG = False # True#os.getenv("DEBUG")
 BASE_DIR = Path(__file__).resolve().parent.parent
 AUTH_USER_MODEL = "users.User"
 SITE_NAME = os.getenv("SITE_NAME")
@@ -90,8 +91,10 @@ REDIS_BASE_FOR_CACHE_LINK = redis.StrictRedis(
 
 GRAPPELLI_ADMIN_TITLE = 'E-LNK Панель управления'
 
-CORS_ORIGIN_ALLOW_ALL = False
-CORS_URLS_REGEX = r"^/api/.*$" 
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_URLS_REGEX = r"^/api/.*$"
+
+CSRF_TRUSTED_ORIGINS = ['https://e-lnk.ru']
 
 CELERY_BROKER_URL = f"redis://:{REDIS_PASS}@redis_db:{REDIS_PORT}/{REDIS_DB_STAT}"  # Пока запускаю в докере - redis_db
 CELERY_ACCEPT_CONTENT = ["json"]
@@ -208,15 +211,15 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.AnonRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "user": os.getenv("USER"),
-        "anon": os.getenv("ANON"),
-        "create_link_user": os.getenv("CREATE_LINK_USER"),
-        "create_link_anonym": os.getenv("CREATE_LINK_ANONYM"),
-        "user_pass_try": os.getenv("USER_PASS_TRY"),
-        "anon_pass_try": os.getenv("ANON_PASS_TRY"),
-        "anon_registration": os.getenv("ANON_REGISTRATION"),
-        "pass_open_anon": os.getenv("ANON_TRY_PASS"),
-        "pass_open_user": os.getenv("USER_TRY_PASS"),
+        "user": '1000000/hour', #os.getenv("USER"),
+        "anon": '1000000/hour', #os.getenv("ANON"),
+        "create_link_user": '1000000/hour',  #os.getenv("CREATE_LINK_USER"),
+        "create_link_anonym": '1000000/hour', #os.getenv("CREATE_LINK_ANONYM"),
+        "user_pass_try": '1000000/hour', #os.getenv("USER_PASS_TRY"),
+        "anon_pass_try": '1000000/hour', #os.getenv("ANON_PASS_TRY"),
+        "anon_registration": '1000000/hour', #os.getenv("ANON_REGISTRATION"),
+        "pass_open_anon": '1000000/hour', #os.getenv("ANON_TRY_PASS"),
+        "pass_open_user": '1000000/hour', #os.getenv("USER_TRY_PASS"),
     },
 }
 
@@ -333,3 +336,5 @@ cache.get_or_set("count_cache_infolink", 0, None) ##############################
 cache.set("no_reload_day", 0, None) # Кол-во дней без перезагрузки сервиса
 cache.set("reporteds", {}, None), # Кол-во ситуаций которые привели к исключениям(либо очень редким случаям)
 cache.set("time_service", {}, None), # Сколько времени заняло ежечасное самообслуживание сервиса (запись данных из кеша в БД)
+#cache.delete_pattern("statx_aclick*")
+#cache.delete_pattern("statx_click*")

@@ -22,33 +22,40 @@ def saver_info() -> None:
     попутно удаляем из кеша обработанную информацию"""
     start = datetime.datetime.now()
     if int(cache.get("count_cache_infolink")) > 0:
-        result = WriteStat.one_hour()
-        [bot.send_message(key, f"Сохранено: {result}") for key in TG_CHAT_DATA]
+        WriteStat.one_hour()
+        [bot.send_message(key, f"Сохранено") for key in TG_CHAT_DATA]
     else:
         [bot.send_message(key, "Сохранять нечего") for key in TG_CHAT_DATA]
     utc_now = datetime.datetime.now(datetime.timezone.utc)
     yesterday = utc_now - datetime.timedelta(days=1)
+    # Берем список избранных юзеров для подсчета статистики
     user_list = list(
-        User.objects.filter(
-            Q(subs_type__in=["MOD", "BTEST"]) & Q(banned=False) & Q(trust_rating__gt=1)
-        ).values_list("my_timezone", "send_stat_email", "email", "id")
+        User.objects.filter(Q(banned=False) & Q(trust_rating__gt=1) #Q(subs_type__in=["MOD", "BTEST"]) & 
+        ).values_list("my_timezone", "send_stat_email", "email", "id", "subs_type")
     )
     data_id = []
     for usr in user_list:
+        # Если этот пользователь не менял свой часовой пояс в настройках (UTC)
         if not cache.get(
             f"edit_utc_{usr[3]}"
-        ):  # Создать запись если человек менял свой часовой пояс
+        ):
             user_hours = utc_now + datetime.timedelta(hours=int(usr[0]))
             if user_hours.strftime("%H") == "00":
                 """Если у пользователя полночь (00:00) по его часовому поясу,
                 высчитываем статистику за прошедший день для недельной статистики"""
                 data_id.append(int(usr[3]))
                 day_week = user_hours.isoweekday()
-                WriteStat.one_week(day_week, usr)
-                if usr[1] is True:
-                    """Если пользователь указал в своем профиле присылать ему статистику на почту"""
-                    StatCreate.every_day_stat(usr)
-                    RegMail.send_stat_pdf(yesterday)
+                # Если у пользователя статус не дефолтного пользователя - считаем ему статистику
+                if usr[4] != "REG":
+                    WriteStat.one_week(day_week, usr)
+                    # Если не дефолтный юзер включил отправку статистики на емейл
+                    if usr[1] is True:
+                        """Если пользователь указал в своем профиле присылать ему статистику на почту"""
+                        StatCreate.every_day_stat(usr)
+                        RegMail.send_stat_pdf(yesterday)
+                # Очищаем счетчики переходов по ссылкам за сутки
+                cache.delete_pattern(f"statx_aclick_{usr[3]}_*")
+                cache.delete_pattern(f"statx_click_{usr[3]}_*")
     # Удаляем статистику переходов из базы, у пользователей для которых произвели рассчет
     InfoLink.objects.filter(link_check__author_id__in=data_id).delete()
     time_service = datetime.datetime.now() - start
@@ -59,6 +66,7 @@ def saver_info() -> None:
 
 @app.task
 def send_admin_stat_tg() -> None:
+    cache.set("send_critical_msg", "No", None)
     today = datetime.date.today()
     yesterday = today - datetime.timedelta(days=1)
     # Начало бота
@@ -98,11 +106,14 @@ def cleaner_db() -> None:
 def optimize_live_time_cache() -> None:
     import psutil
     time_live = int(cache.get("live_cache"))
-    if int(psutil.cpu_percent()) > 0:
+    """Если нагрузка на ядро более 50%, увеличиваем жизнь кеша на 10 сек
+    иначе если время жизни кеша не 10 сек(это минимум) - уменьшаем на 10"""
+    if int(psutil.cpu_percent()) > 50:
         if time_live < 3600:
             time_live += 10
             cache.set("live_cache", time_live, None)
         else:
+            #Только 1 раз в день отправляем это сообщение
             sends = str(cache.get("send_critical_msg"))
             if sends == "No":
                 [bot.send_message(key, "Ядро не справляется") for key in TG_CHAT_DATA]
