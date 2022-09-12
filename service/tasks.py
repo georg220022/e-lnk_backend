@@ -2,7 +2,6 @@ import datetime
 from telegram import Bot
 from django.db.models import Q
 from django.core.cache import cache
-from celery.schedules import crontab
 from elink.celery import app
 from elink_index.models import InfoLink
 from elink.settings import TG_CHAT_DATA, TELEGRAM_TOKEN, stat_data

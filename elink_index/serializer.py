@@ -19,7 +19,7 @@ class LinkAuthSerializer(serializers.ModelSerializer):
     longLink = serializers.ModelField(
         required=False, model_field=LinkRegUser()._meta.get_field("long_link")
     )
-    linkDescription = serializers.ModelField(
+    linkName = serializers.ModelField(
         required=False, model_field=LinkRegUser()._meta.get_field("description")
     )
     linkLimit = serializers.ModelField(
@@ -76,7 +76,7 @@ class LinkAuthSerializer(serializers.ModelSerializer):
         data.pop("longLink")
         data["short_code"] = GeneratorShortCode.for_postgresql()
         data["date_add"] = timezone.now()
-        data["description"] = data.pop("linkDescription", "")
+        data["description"] = data.pop("linkName", "")
         data["limited_link"] = data.pop("linkLimit", -1)
         data["secure_link"] = data.pop("linkPassword", "")
         data["start_link"] = data.pop("linkStartDate", None)

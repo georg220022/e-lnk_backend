@@ -10,6 +10,9 @@ urlpatterns = [
         name="pass_check",
     ),
     path(
+        "fastlink/<str:site>/<str:long_code>",
+    )
+    path(
         "/links",
         PostlinkViewset.as_view(
             {   

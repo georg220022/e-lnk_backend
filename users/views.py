@@ -1,4 +1,5 @@
 import base64
+import logging
 import json
 from django.http import HttpRequest
 from django.core.exceptions import ObjectDoesNotExist
@@ -10,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import redirect
 from django.shortcuts import get_object_or_404
-from elink.settings import REDIS_FOR_ACTIVATE, SITE_NAME
+from elink.settings import REDIS_FOR_ACTIVATE
 from service.send_mail import RegMail
 from service.generator_code import GeneratorCode as GeneratorId
 from .models import User
@@ -18,34 +19,47 @@ from service.server_stat import ServerStat
 from django.core.cache import cache
 from .serializers import RegistrationSerializer, ChangePasswordSerializer
 
+logger = logging.getLogger(__name__)
+
 
 class CustomRefresh(viewsets.ViewSet, BlacklistMixin):
     def get_permissions(self):
         return (permissions.AllowAny(),)
 
     def get_token(self, request: HttpRequest) -> Response:
-        try:
-            old_token = request.COOKIES.get("refresh", False)
-            RefreshToken(old_token).blacklist()
-            old_token = old_token[old_token.find(".") + 1: old_token.rfind(".")]
-            base64_message = old_token
-            base64_bytes = base64_message.encode("ascii")
-            message_bytes = base64.b64decode(base64_bytes + b"===")
-            message = message_bytes.decode("ascii")
-            message = json.loads(message)
-            public_key = message.get("user_id", "юзера_нет")
-        except ValueError as e:  # Вот тут может упасть
-            data = {
-                "error": (
-                    "Токен обновления доступа не прошел"
-                    + "проверку, попробуйте войти снова."
-                )
-            }
-            ServerStat.reported(
-                "CustomRefresh_42", f"Не удалось выдать новый токен {e}"
+        err_data = {
+            "error": (
+                "Токен обновления доступа не прошел"
+                + "проверку, попробуйте войти снова."
             )
-            cache.incr("server_bad_try_update_refresh")
-            return Response(data, status=status.HTTP_401_UNAUTHORIZED)
+        }
+        old_token = request.COOKIES.get("refresh", False)
+        if old_token:
+            if isinstance(old_token, bytes):
+                try:
+                    RefreshToken(old_token).blacklist()
+                except Exception as e:
+                    ServerStat.reported(
+                        "CustomRefresh_42", f"Не удалось выдать новый токен {e}"
+                    )
+                    logger.warning(
+                        f"Старый токен: {old_token}, Request: {request}, Self: {self}"
+                    )
+                    cache.incr("server_bad_try_update_refresh")
+                    return Response(err_data, status=status.HTTP_401_UNAUTHORIZED)
+                old_token = old_token[old_token.find(".") + 1 : old_token.rfind(".")]
+                base64_message = old_token
+                base64_bytes = base64_message.encode("ascii")
+                message_bytes = base64.b64decode(base64_bytes + b"===")
+                message = message_bytes.decode("ascii")
+                message = json.loads(message)
+                public_key = message.get("user_id", False)
+                if not public_key:
+                    return Response(err_data, status=status.HTTP_401_UNAUTHORIZED)
+            else:
+                return Response(err_data, status=status.HTTP_401_UNAUTHORIZED)
+        else:
+            return Response(err_data, status=status.HTTP_401_UNAUTHORIZED)
         user = get_object_or_404(User, public_key=public_key)
         refresh = RefreshToken.for_user(user)
         data = {
@@ -81,6 +95,7 @@ class ChangePasswordView(generics.UpdateAPIView):
             if not self.object.check_password(serializer.data.get("old_password")):
                 data = {"error": "Пароль не подошел"}
                 cache.incr("server_bad_change_pass")
+                logger.warning(f"Request: {request}, Self: {self}")
                 return Response(data, status=status.HTTP_400_BAD_REQUEST)
             self.object.set_password(serializer.data.get("new_password"))
             self.object.public_key = str(self.object.id) + str(GeneratorId.public_id())
@@ -209,7 +224,7 @@ class ActivateAccount(viewsets.ViewSet):
                         REDIS_FOR_ACTIVATE.delete(id)
                         response = redirect("https://e-lnk.ru")
                         response.delete_cookie("registration_elink")
-                        cache.incr("activated")
+                        cache.incr("server_activated")
                         return response
         cache.incr("server_bad_try_activated")
         return redirect("https://e-lnk.ru/404")

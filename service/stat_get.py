@@ -75,7 +75,7 @@ class StatisticGet:
         obj_id = request.data.get("shortCodes", False)
         link_obj = get_object_or_404(LinkRegUser, short_code=obj_id)
         if request.user.id == link_obj.author.id:
-            obj_descrip = request.data.get("linkDescription", False)
+            obj_descrip = request.data.get("linkName", False)
             if obj_descrip is not False:
                 if len(obj_descrip) > 0 and len(obj_descrip) <= 1000:
                     return link_obj

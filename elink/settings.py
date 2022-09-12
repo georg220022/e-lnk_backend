@@ -20,8 +20,6 @@ ACCESS_TIME = os.getenv("ACCESS_TIME")
 REFRESH_TIME = os.getenv("REFRESH_TIME")
 TIME_SAVE_COOKIE = os.getenv("TIME_SAVE_COOKIE")
 
-#CACHE_TABLE = os.getenv("CACHE_TABLE")
-
 APPEND_SLASH = False
 ALLOWED_HOSTS = [
     "*",
@@ -32,10 +30,9 @@ ALLOWED_HOSTS = [
     "https://e-lnk.ru",
 ]
 SECRET_KEY = os.getenv("SECRET_KEY")
-DEBUG = False # True#os.getenv("DEBUG")
+DEBUG = False
 BASE_DIR = Path(__file__).resolve().parent.parent
 AUTH_USER_MODEL = "users.User"
-SITE_NAME = os.getenv("SITE_NAME")
 
 EMAIL_HOST = os.getenv("EMAIL_HOST")
 EMAIL_PORT = os.getenv("EMAIL_PORT")
@@ -89,12 +86,11 @@ REDIS_BASE_FOR_CACHE_LINK = redis.StrictRedis(
     # decode_responses=True
 )
 
-GRAPPELLI_ADMIN_TITLE = 'E-LNK Панель управления'
-
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_URLS_REGEX = r"^/api/.*$"
 
 CSRF_TRUSTED_ORIGINS = ['https://e-lnk.ru']
+INTERNAL_IPS = ["127.0.0.1"]
 
 CELERY_BROKER_URL = f"redis://:{REDIS_PASS}@redis_db:{REDIS_PORT}/{REDIS_DB_STAT}"  # Пока запускаю в докере - redis_db
 CELERY_ACCEPT_CONTENT = ["json"]
@@ -103,7 +99,6 @@ CELERY_TASK_SERIALIZER = "json"
 INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     "jazzmin",
-    #"grappelli",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -192,11 +187,6 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
-INTERNAL_IPS = [
-    "127.0.0.1",
-]
-
-
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
@@ -211,15 +201,15 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.AnonRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "user": '1000000/hour', #os.getenv("USER"),
-        "anon": '1000000/hour', #os.getenv("ANON"),
-        "create_link_user": '1000000/hour',  #os.getenv("CREATE_LINK_USER"),
-        "create_link_anonym": '1000000/hour', #os.getenv("CREATE_LINK_ANONYM"),
-        "user_pass_try": '1000000/hour', #os.getenv("USER_PASS_TRY"),
-        "anon_pass_try": '1000000/hour', #os.getenv("ANON_PASS_TRY"),
-        "anon_registration": '1000000/hour', #os.getenv("ANON_REGISTRATION"),
-        "pass_open_anon": '1000000/hour', #os.getenv("ANON_TRY_PASS"),
-        "pass_open_user": '1000000/hour', #os.getenv("USER_TRY_PASS"),
+        "user": os.getenv("USER"),
+        "anon": os.getenv("ANON"),
+        "create_link_user": os.getenv("CREATE_LINK_USER"),
+        "create_link_anonym": os.getenv("CREATE_LINK_ANONYM"),
+        "user_pass_try": os.getenv("USER_PASS_TRY"),
+        "anon_pass_try": os.getenv("ANON_PASS_TRY"),
+        "anon_registration": os.getenv("ANON_REGISTRATION"),
+        "pass_open_anon": os.getenv("ANON_TRY_PASS"),
+        "pass_open_user": os.getenv("USER_TRY_PASS"),
     },
 }
 
@@ -244,10 +234,11 @@ SIMPLE_JWT = {
     "JTI_CLAIM": "jti",
 }
 
+JAZZMIN_UI_TWEAKS = {
+    "theme": "cosmo",
+}
 
 JAZZMIN_SETTINGS = {
-    "hide_models": ["Users"],
-    "order_with_respect_to": ["Users"],
     "site_title": "Панель управления",
     "site_header": "E-LNK",
     "site_brand": "E-LNK",
@@ -283,6 +274,38 @@ JAZZMIN_SETTINGS = {
     "language_chooser": False,
 }
 
+ADMINS = [ ('Georg', 'help@e-lnk.ru') ]
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "default_format": {
+            "format": "[{module} {asctime} {levelname}] - {message} - {filename} - {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "file": {
+            "level": "WARNING",
+            "class": "logging.FileHandler",
+            "filename": "logs/debug.log",
+            "formatter": "default_format",
+        },
+        "mail_admins": {
+            "level": 'ERROR',
+            "class": 'django.utils.log.AdminEmailHandler',
+            "include_html": True,
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["file"],
+            "level": "WARNING",
+            "propagate": True,
+        },
+    },
+}
 
 stat_data = {
     "server_no_long_link": 0, # Не верная длина ссылки

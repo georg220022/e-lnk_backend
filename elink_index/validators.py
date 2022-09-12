@@ -10,7 +10,7 @@ from django.core.cache import cache
 
 class CheckLink:
     @staticmethod  # Класс метод под вопросом
-    def get_long_url(request_data: Dict) -> Union[bool, str]:
+    def get_long_url(request_data: Dict, fast_link=False) -> Union[bool, str]:
         long_link = request_data.get("longLink", False)
         if long_link and len(long_link) < 5001:
             if "https://" == long_link[0:8] or "http://" == long_link[0:7]:
@@ -80,7 +80,7 @@ class CheckLink:
         obj_id = request_obj.data.get("shortCodes", False)
         link_obj = get_object_or_404(LinkRegUser, short_code=obj_id)
         if request_obj.user.id == link_obj.author.id:
-            obj_descrip = request_obj.data.get("linkDescription", False)
+            obj_descrip = request_obj.data.get("linkName", False)
             if obj_descrip is not False:
                 if len(obj_descrip) > 0 and len(obj_descrip) <= 25:
                     return link_obj

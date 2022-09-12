@@ -1,5 +1,5 @@
 from django.core.cache import cache
-from django.db.models import Q, Count
+from django.db.models import Count
 from elink_index.models import LinkRegUser
 from users.models import User
 from typing import Union
@@ -12,10 +12,7 @@ class UserLimit:
             #cache.clear()
             cnt_lnk = cache.get_or_set(f"link_limit_{request_user.id}", 1)
             if not isinstance(cnt_lnk, int):
-                print(LinkRegUser.objects.filter(author_id=request_user.id).values_list("author_id").annotate(Count("author_id")))
                 obj = len(LinkRegUser.objects.filter(author_id=request_user.id).values_list("author_id").annotate(Count("author_id")))
-                print(obj)
-
                 cache.set(f"link_limit_{request_user.id}", int(obj), 2600000)
             if request_user.subs_type == "REG":
                 if int(cnt_lnk) < 100:

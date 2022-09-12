@@ -1,9 +1,9 @@
 from django.core.cache import cache
-from django.db.models import Q, Count
-from django.http import HttpRequest
-from rest_framework import status, viewsets
+from django.db.models import Q
+from django.http import HttpRequest, HttpResponse
+from django.shortcuts import redirect, render
+from rest_framework import status, viewsets, permissions
 from rest_framework.response import Response
-from collections import OrderedDict
 
 from elink_index.models import LinkRegUser
 from service.read_write_base import RedisLink
@@ -85,7 +85,7 @@ class PostlinkViewset(viewsets.ViewSet):
     def update_description(self, request: HttpRequest) -> Response:
         obj = CheckLink.description(request)
         if obj is not False:
-            description = request.data["linkDescription"]
+            description = request.data["linkName"]
             obj.description = description
             obj.save()
             CacheModule.editor(request.user.id, obj.id, description)
@@ -101,3 +101,20 @@ class PostlinkViewset(viewsets.ViewSet):
             "неудачная попытка изменения поля description",
         )
         return Response(msg, status=status.HTTP_403_FORBIDDEN)
+
+class FastlinkViewset(viewsets.ViewSet):
+
+    def get_permissions(self):
+        return (permissions.AllowAny(),)
+    
+    def create_link(self, request: HttpRequest, site: str, long_code: str) -> Response:
+        if len(long_code) < 5001:
+            long_link = "https://" + site + ".ru" + long_code
+            data = RedisLink.writer(long_link, fast_link=True)
+            cache.incr("server_guest_link")
+            context = {
+                "short_link": data,
+                "long_link": long_link
+            }
+            return render(request, "fast_redirect.html", context=context)#HttpResponse("")
+        return redirect("https://e-lnk.ru/404")

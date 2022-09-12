@@ -1,4 +1,4 @@
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect
 from django.http import HttpRequest
 from django.core.cache import cache
 
@@ -36,11 +36,9 @@ def open_link(request: HttpRequest, short_code: str) -> Response:
                     "author_id": object_postgres.author_id
                 }
                 cache.set(f"open_{object_postgres.short_code}", data, 1200)
-                #print('polojili')
                 return redirect(f"https://e-lnk.ru/password-check.html?open_{short_code}")
             else:
                 if not CheckLink.check_limited(object_postgres):
-                    print('kekekekekekekekeekekeekkekkekee')
                     return redirect("https://e-lnk.ru/end_limit")
                 StatisticGet.collect_stats(request, object_postgres)
                 response = redirect(object_postgres.long_link)
@@ -49,14 +47,13 @@ def open_link(request: HttpRequest, short_code: str) -> Response:
                 )
                 return response
     cache.incr("server_open_bad_link")
-    return render(request, "404.html")
+    return redirect("https://e-lnk.ru/end_limit")
 
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
 @throttle_classes([PassLinkUserThrottle, PassAnonymousThrottle])
 def unlock_pass(request: HttpRequest) -> Response:
-    #print(request.data)
     short_code = request.data.get("shortCode", False)
     passwd = request.data.get("password", False)
     if passwd and short_code:

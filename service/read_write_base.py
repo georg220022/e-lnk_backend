@@ -3,7 +3,7 @@ from typing import Union
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.cache import cache
 
-from elink.settings import SITE_NAME, REDIS_BASE_FOR_LINK as REDIS_BASE
+from elink.settings import REDIS_BASE_FOR_LINK as REDIS_BASE
 from elink_index.models import LinkRegUser
 
 from .generator_code import GeneratorCode as GeneratorShortCode
@@ -13,7 +13,7 @@ from .server_stat import ServerStat
 
 class RedisLink:
     @staticmethod
-    def writer(long_link: str) -> dict:
+    def writer(long_link: str, fast_link=False) -> dict | str:
         short_code = (
             GeneratorShortCode.for_redis()
         )  # Генератор кода короткой ссылки для Redis.
@@ -21,17 +21,20 @@ class RedisLink:
             short_code, long_link  # Запишем в Redis ключ это код_короткой ссылки,
         )  # редис удалит самые не используемые при нехватке памяти(настроено в redis.conf)
         short_link = (
-            SITE_NAME + short_code
+            "https://e-lnk.ru/" + short_code
         )  # "https://site.tu/" + "P12cfQsasjB", как пример.
-        qr_code_base64 = QrGenerator.qr_base64(
-            short_link
-        )  # Генератор QR кода, вернет картинку в base64
-        data = {  # значение - это полная ссылка отправленная авторизованным юзером.
-            "longLink": long_link,
-            "shortLink": short_link,
-            "qr": qr_code_base64,
-        }
-        return data
+
+        if not fast_link:
+            qr_code_base64 = QrGenerator.qr_base64(
+                short_link
+            )  # Генератор QR кода, вернет картинку в base64
+            data = {  # значение - это полная ссылка отправленная авторизованным юзером.
+                "longLink": long_link,
+                "shortLink": short_link,
+                "qr": qr_code_base64,
+            }
+            return data
+        return short_link
 
     @staticmethod
     def reader(short_code: str) -> Union[dict, bool]:
@@ -61,15 +64,6 @@ class PostgresLink:
     def reader(short_code=None) -> dict:
         if "p" in str(short_code):
             try:
-                """obj = LinkRegUser.objects.defer(
-                    "description",
-                    "how_many_clicked",
-                    "again_how_many_clicked",
-                    "public_stat_small",
-                    "public_stat_full",
-                    "author_id",
-                    "qr"
-                ).get(short_code=short_code)"""
                 obj = LinkRegUser.objects.only(
                     "short_code",
                     "long_link",

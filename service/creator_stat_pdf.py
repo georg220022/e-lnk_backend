@@ -26,8 +26,8 @@ class StatCreate:
         data_user = []
         for info in serializer.data:
             # new_data = ["1", info["statistics"] ]
-            if len(info["linkDescription"]) == 0:
-                info["linkDescription"] = "Название не заполнено"
+            if info["linkName"] == "":
+                info["linkName"] = "Название не заполнено"
             total = sum(info["statistics"]["clicks"].values())
             pc = info["statistics"]["clicks"]["pc"]
             phone = info["statistics"]["clicks"]["mobile"]
@@ -38,7 +38,7 @@ class StatCreate:
                 re_click = 0
             one_lnk_stat = [
                 "1",
-                str(info["linkDescription"]),
+                str(info["linkName"]),
                 str(total),
                 str(re_click),
                 str(pc),

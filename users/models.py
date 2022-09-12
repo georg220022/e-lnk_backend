@@ -46,7 +46,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
     id = models.AutoField(primary_key=True, unique=True)
     violations = models.IntegerField(default=0, verbose_name="количество нарушений")
-    trust = models.BooleanField(default=False, verbose_name="доверенный пользователь\n(снимает многие ограничения и проверки)")
+    trust = models.BooleanField(default=False, verbose_name="доверенный пользователь")
     username = models.CharField(max_length=50, null=True, verbose_name="имя")
     company_name = models.CharField(max_length=100, null=True, verbose_name="компания")
     email = models.EmailField(max_length=100, unique=True)

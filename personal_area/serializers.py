@@ -8,10 +8,6 @@ from elink.settings import SITE_NAME
 from elink_index.models import LinkRegUser
 
 
-class GetStatSerializer(serializers.Serializer):
-    pass
-
-
 class StatSerializer(serializers.ModelSerializer):
 
     statistics = serializers.SerializerMethodField(read_only=True)
@@ -20,7 +16,7 @@ class StatSerializer(serializers.ModelSerializer):
     longLink = serializers.ModelField(
         model_field=LinkRegUser()._meta.get_field("long_link")
     )
-    linkDescription = serializers.ModelField(
+    linkName = serializers.ModelField(
         model_field=LinkRegUser()._meta.get_field("description")
     )
     linkLimit = serializers.ModelField(
@@ -78,10 +74,6 @@ class StatSerializer(serializers.ModelSerializer):
             else:
                 instance.date_stop = "-1"
             instance.date_add = instance.date_add + user_tz
-            print('huy')
-            
-            #instance.remove('date_stop')
-            print(instance)
         data = super(StatSerializer, self).to_representation(instance)
         return data
 
@@ -147,20 +139,16 @@ class StatSerializer(serializers.ModelSerializer):
             "other": device[7],
         }
         re_clicked_today = cache.get(
-            f"statx_aclick_{obj.author_id}_{obj.id}"                   #  {obj_lnk[0].get("link_check_id", "unknown")}"
+            f"statx_aclick_{obj.author_id}_{obj.id}"
         )
-        print(cache.get(f"statx_aclick_{obj.author_id}_{obj.id}"))
         clicked_today = cache.get(
-            f"statx_click_{obj.author_id}_{obj.id}"                   #  {obj_lnk[0].get("link_check_id", "unknown")}"
+            f"statx_click_{obj.author_id}_{obj.id}"
         )
         if not isinstance(re_clicked_today, int):
             re_clicked_today = 0
         if not isinstance(clicked_today, int):
             clicked_today = 0
         hour.update({24: 0})
-        #if self.context["action"] == "task_celery":
-        #    cache.delete(f"statx_click_{obj.id}")
-        #    cache.delete(f"statx_aclick_{obj.id}")
         return {
             "country": countrys,
             "device": device,
