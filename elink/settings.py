@@ -7,7 +7,7 @@ from django.core.cache import cache
 
 load_dotenv()
 
-
+# Подгружаем id чатов для отправки статистики админам
 TG_CHAT_DATA = [
     os.getenv("TELEGRAM_CHAT_1"),
     os.getenv("TELEGRAM_CHAT_2"),
@@ -22,12 +22,8 @@ TIME_SAVE_COOKIE = os.getenv("TIME_SAVE_COOKIE")
 
 APPEND_SLASH = False
 ALLOWED_HOSTS = [
-    "*",
-    "127.0.0.1:8000",
-    "46.229.214.129",
     "127.0.0.1",
     "e-lnk.ru",
-    "https://e-lnk.ru",
 ]
 SECRET_KEY = os.getenv("SECRET_KEY")
 DEBUG = False
@@ -86,13 +82,12 @@ REDIS_BASE_FOR_CACHE_LINK = redis.StrictRedis(
     # decode_responses=True
 )
 
-CORS_ORIGIN_ALLOW_ALL = True
-CORS_URLS_REGEX = r"^/api/.*$"
+# CORS_ORIGIN_ALLOW_ALL = False
+# CORS_URLS_REGEX = r"^/api/.*$"
 
 CSRF_TRUSTED_ORIGINS = ['https://e-lnk.ru']
-INTERNAL_IPS = ["127.0.0.1"]
 
-CELERY_BROKER_URL = f"redis://:{REDIS_PASS}@redis_db:{REDIS_PORT}/{REDIS_DB_STAT}"  # Пока запускаю в докере - redis_db
+CELERY_BROKER_URL = f"redis://:{REDIS_PASS}@{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB_STAT}"  # Если запуск через контейнер - redis_db
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 
@@ -105,9 +100,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "debug_toolbar",
     "rest_framework",
-    "corsheaders",
+    # "corsheaders",
     "elink_redirect",
     "users",
     "elink_index",
@@ -118,23 +112,16 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
+    # Когда фронт будет запущен отдельным приложением - добавлю CORS
+    # "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "debug_toolbar.middleware.DebugToolbarMiddleware",
-    "debug_toolbar_force.middleware.ForceDebugToolbarMiddleware",
 ]
 
 ROOT_URLCONF = "elink.urls"
-
-STATIC_URL = "static/"
-STATIC_ROOT = os.path.join(BASE_DIR, "static")
-
-MEDIA_URL = "media/"
-MEDIA_ROOT = os.path.join(BASE_DIR, "/media/")
 
 TEMPLATES = [
     {
@@ -153,7 +140,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "elink.wsgi.application"
-
 
 DATABASES = {
     "default": {
@@ -185,7 +171,7 @@ LANGUAGE_CODE = "ru"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_L10N = True
-USE_TZ = True
+USE_TZ = False
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -234,10 +220,41 @@ SIMPLE_JWT = {
     "JTI_CLAIM": "jti",
 }
 
+# Если сервер запущен с дебагом, отключаем тротлинг, включаем статику и тулбары Django и DRF
+if DEBUG:
+    INSTALLED_APPS += ["debug_toolbar",]
+    MIDDLEWARE += [ 
+        "debug_toolbar.middleware.DebugToolbarMiddleware",
+        "debug_toolbar_force.middleware.ForceDebugToolbarMiddleware",
+    ]
+    STATIC_URL = "static/"
+    STATIC_ROOT = os.path.join(BASE_DIR, "static")
+
+    MEDIA_URL = "media/"
+    MEDIA_ROOT = os.path.join(BASE_DIR, "/media/")
+    
+    DEFAULT_THROTTLE_RATES = {
+        "user": "999999/hour",
+        "anon": "999999/hour",
+        "create_link_user": "999999/hour",
+        "create_link_anonym": "999999/hour",
+        "user_pass_try": "999999/hour",
+        "anon_pass_try": "999999/hour",
+        "anon_registration": "999999/hour",
+        "pass_open_anon": "999999/hour",
+        "pass_open_user": "999999/hour",
+    }
+    
+    REST_FRAMEWORK.update(DEFAULT_THROTTLE_RATES)
+    INTERNAL_IPS = ["127.0.0.1"]
+
+
+# Тема админ-панели
 JAZZMIN_UI_TWEAKS = {
     "theme": "cosmo",
 }
 
+#Настройки админ-панели
 JAZZMIN_SETTINGS = {
     "site_title": "Панель управления",
     "site_header": "E-LNK",
@@ -307,6 +324,10 @@ LOGGING = {
     },
 }
 
+# Очищаем кеш полностью при перезагрузке сервера
+cache.clear()
+
+# Техническая информация для отправки в telegram администратора(ов) ( Prometheus для бедных xD )
 stat_data = {
     "server_no_long_link": 0, # Не верная длина ссылки
     "server_check_pass": 0, # Обращение к ссылке с паролем
@@ -353,11 +374,14 @@ stat_data = {
     "server_bad_try_activated": 0, # Неудачных попыток активации
 }
 cache.set_many(stat_data, None)
-cache.get_or_set("send_critical_msg", "No", None) # Переменная в кеше которая позволяет отправлять сообщение в ТГ только 1 раз в сутки при перегрузке процессора
-cache.get_or_set("live_cache", 10, None) # Стандартное время жизни кеша
-cache.get_or_set("count_cache_infolink", 0, None) ################################ 
-cache.set("no_reload_day", 0, None) # Кол-во дней без перезагрузки сервиса
-cache.set("reporteds", {}, None), # Кол-во ситуаций которые привели к исключениям(либо очень редким случаям)
-cache.set("time_service", {}, None), # Сколько времени заняло ежечасное самообслуживание сервиса (запись данных из кеша в БД)
-#cache.delete_pattern("statx_aclick*")
-#cache.delete_pattern("statx_click*")
+
+#  Параметры не для обслуживания сервера, не обнуляются в фоновых задачах по окончании дня
+technical_data = {
+    "send_critical_msg": "No",
+    "live_cache": 10,
+    "count_cache_infolink": 0,
+    "no_reload_day": 0,
+    "reporteds": {},
+    "time_service": {}
+}
+cache.set_many(technical_data, None)

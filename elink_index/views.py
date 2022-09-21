@@ -26,7 +26,7 @@ class PostlinkViewset(viewsets.ViewSet):
 
     def create_link(self, request: HttpRequest) -> Response:
         long_link = CheckLink.get_long_url(request.data)
-        if long_link is not False:
+        if long_link: # is not False
             if request.user.is_anonymous:
                 data = RedisLink.writer(long_link)
                 cache.incr("server_guest_link")
@@ -61,15 +61,18 @@ class PostlinkViewset(viewsets.ViewSet):
         return Response(data, status=status.HTTP_400_BAD_REQUEST)
 
     def delete_link(self, request: HttpRequest) -> Response:
-        short_links = request.data.get("shortLink", False)
+        short_links = request.data.get("shortLinks", False)
         if short_links is not False and len(short_links) > 0:
-            short_codes = [obj[15:] for obj in short_links] # 9 для e-lnk.ru
+            short_codes = [str(obj[17:]) for obj in short_links]  # 9 для e-lnk.ru
             author = self.request.user
-            query_values = list(LinkRegUser.objects.filter(
-                Q(author=author) & Q(short_code__in=short_codes)).values_list("id", flat=True))
+            query_values = list(
+                LinkRegUser.objects.filter(
+                    Q(author=author) & Q(short_code__in=short_codes)
+                ).values_list("short_code", flat=True)
+            )
             len_query = len(query_values)
             if len_query > 0:
-                LinkRegUser.objects.filter(id__in=query_values).delete()
+                LinkRegUser.objects.filter(short_code__in=query_values).delete()
                 CacheModule.deleter(author.id, query_values)
                 cache.incr(f"link_limit_{request.user.id}", int(-len_query))
                 cache.incr("server_delete_link")
@@ -84,11 +87,21 @@ class PostlinkViewset(viewsets.ViewSet):
 
     def update_description(self, request: HttpRequest) -> Response:
         obj = CheckLink.description(request)
-        if obj is not False:
-            description = request.data["linkName"]
-            obj.description = description
+        if obj: #  is not False
+            description = request.data.get("linkName", False)
+            if description:
+                obj.description = description
+            else:
+                obj.description = ""
+                description = ""
+            passwd = request.data.get("linkPassword", False)
+            if passwd:
+                obj.secure_link = passwd
+            else:
+                obj.secure_link = ""
+                passwd = ""
             obj.save()
-            CacheModule.editor(request.user.id, obj.id, description)
+            CacheModule.editor(request.user.id, obj, description, passwd)
             cache.incr("server_update_desrip_link")
             return Response(status=status.HTTP_200_OK)
         cache.incr("server_bad_update_desrip_link")
@@ -102,19 +115,22 @@ class PostlinkViewset(viewsets.ViewSet):
         )
         return Response(msg, status=status.HTTP_403_FORBIDDEN)
 
-class FastlinkViewset(viewsets.ViewSet):
 
+class FastlinkViewset(viewsets.ViewSet):
     def get_permissions(self):
-        return (permissions.AllowAny(),)
-    
-    def create_link(self, request: HttpRequest, site: str, long_code: str) -> Response:
-        if len(long_code) < 5001:
+        return Permissons.choices_methods(self.action)
+
+    def create_link(self, request: HttpRequest, site: str) -> Response:
+        long_code = request.META.get("HTTP_MY_URL", False)
+        if long_code and len(long_code) < 5001:
             long_link = "https://" + site + ".ru" + long_code
             data = RedisLink.writer(long_link, fast_link=True)
             cache.incr("server_guest_link")
-            context = {
-                "short_link": data,
-                "long_link": long_link
-            }
-            return render(request, "fast_redirect.html", context=context)#HttpResponse("")
+            context = {"short_link": data, "long_link": long_link}
+            return render(
+                request, "fast_redirect.html", context=context
+            )
         return redirect("https://e-lnk.ru/404")
+
+    def handler404(request, exception):
+        return render(request, "email.html")

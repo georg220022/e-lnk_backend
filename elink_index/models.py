@@ -6,16 +6,26 @@ from users.models import User
 class LinkRegUser(models.Model):
     # Автор
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="owner_link", null=False, verbose_name="Автор"
+        User,
+        on_delete=models.CASCADE,
+        related_name="owner_link",
+        null=False,
+        verbose_name="Автор",
     )
     # Изначальная ссылка
-    long_link = models.TextField(max_length=5000, null=False, verbose_name="Длинная ссылка")
+    long_link = models.TextField(
+        max_length=5000, null=False, verbose_name="Длинная ссылка"
+    )
     # короткий код от ссылки
-    short_code = models.CharField(db_index=True, max_length=20, verbose_name="Короткий код")
+    short_code = models.CharField(
+        db_index=True, max_length=20, verbose_name="Короткий код"
+    )
     # дата добавления
     date_add = models.DateTimeField(blank=True, verbose_name="Дата")
     # описание
-    description = models.CharField(null=True, max_length=1000, blank=True, verbose_name="Имя/Описание")
+    description = models.CharField(
+        null=True, max_length=1000, blank=True, verbose_name="Имя/Описание"
+    )
     # включить лимит по переходам
     # limit = models.BooleanField(null=False, default=0)
     # количество переходов по ссылке
@@ -29,7 +39,9 @@ class LinkRegUser(models.Model):
     # Сколько раз перешли по ссылке всего
     how_many_clicked = models.IntegerField(default=0, verbose_name="Переходов всего")
     # Повторные переходы
-    again_how_many_clicked = models.IntegerField(default=0, verbose_name="Повторных переходов")
+    again_how_many_clicked = models.IntegerField(
+        default=0, verbose_name="Повторных переходов"
+    )
     # Разрешить просмотр полной статистики всем людям
     public_stat_full = models.BooleanField(default=False, null=True)
     # Показывать ограниченную статистику всем людям
@@ -56,6 +68,8 @@ class InfoLink(models.Model):
         LinkRegUser, on_delete=models.CASCADE, related_name="link_link", null=False
     )
     # Из какой страны перешли по ссылке
-    country = models.CharField(blank=True, max_length=1000, null=True, verbose_name="Страна")
+    country = models.CharField(
+        blank=True, max_length=1000, null=True, verbose_name="Страна"
+    )
     # Устройство
     device_id = models.PositiveSmallIntegerField(verbose_name="Устройство")

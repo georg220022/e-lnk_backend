@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import PostlinkViewset
+from .views import PostlinkViewset, FastlinkViewset
 
 name_space = "elink_index"
 
@@ -9,14 +9,12 @@ urlpatterns = [
         PostlinkViewset.as_view({"get": "open_link_pass"}),
         name="pass_check",
     ),
-    path(
-        "fastlink/<str:site>/<str:long_code>",
-    )
+    path("/fastlink/<str:site>/", FastlinkViewset.as_view({"get": "create_link"})),
     path(
         "/links",
         PostlinkViewset.as_view(
-            {   
-                #"get": "fast_link",
+            {
+                # "get": "fast_link",
                 "post": "create_link",
                 "delete": "delete_link",
                 "patch": "update_description",

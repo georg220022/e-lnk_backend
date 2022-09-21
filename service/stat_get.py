@@ -15,6 +15,7 @@ from .write_stat import WriteStat
 class StatisticGet:
     @staticmethod
     def check_device(request_meta: dict) -> int:
+        """Получаем id нужной ОС из заголовка"""
         device_name = request_meta["HTTP_USER_AGENT"].lower()
         if "android" in device_name:
             return 1
@@ -38,6 +39,9 @@ class StatisticGet:
     def collect_stats(
         request_obj: HttpRequest, obj: Union[LinkRegUser, dict], secure=False
     ) -> None:
+        """Собираем информацию о кликах по ссылкам ДО 1000 штук, при достижении 1000 записей
+        в кеше ЛИБО по прошествию 1 часа(не зависимо от количества записей в кеше) 
+        произойдет запись в базу данных 1-м запросом"""
         date_check = (
             timezone.now()
         )  # по идее мне нужно время голого utc  # time.strftime("%Y-%m-%d %H:%M") было так и джанго жаловался на наивное время
@@ -57,9 +61,9 @@ class StatisticGet:
         if not cache.has_key(f"statx_click_{author_id}_{ids}"):
             cache.set(f"statx_click_{author_id}_{ids}", 0, 180000)
         cache.incr(f"statx_click_{author_id}_{ids}")
+        if not cache.has_key(f"statx_aclick_{author_id}_{ids}"):
+            cache.set(f"statx_aclick_{author_id}_{ids}", 0, 180000)
         if short_code in request_obj.COOKIES:
-            if not cache.has_key(f"statx_aclick_{author_id}_{ids}"):
-                cache.set(f"statx_aclick_{author_id}_{ids}", 0, 180000)
             cache.incr(f"statx_aclick_{author_id}_{ids}")
         data = InfoLink(
             date_check=date_check,
@@ -72,6 +76,7 @@ class StatisticGet:
 
     @staticmethod
     def description(request: HttpRequest) -> Union[LinkRegUser, bool]:
+        """Изменение описания ссылки(имени)"""
         obj_id = request.data.get("shortCodes", False)
         link_obj = get_object_or_404(LinkRegUser, short_code=obj_id)
         if request.user.id == link_obj.author.id:

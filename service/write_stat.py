@@ -9,45 +9,49 @@ from elink_index.models import InfoLink, LinkRegUser
 class WriteStat:
     @staticmethod
     def one_week(day_week, usr) -> None:
-        data_weeks = OrderedDict(
-            InfoLink.objects.only("date_check", "link_check")
-            .select_related("link_check")
-            .only("author_id")
-            .filter(link_check__author_id=int(usr[3]))
-            .only("link_check")
-            .values_list("link_check__author_id")
-            .annotate(Count("link_check"))
-        )
-        if int(day_week) == 1:
-            new_week_data = {
-                1: 0,
-                2: 0,
-                3: 0,
-                4: 0,
-                5: 0,
-                6: 0,
-                7: 0,
-            }
-            cache.set(f"week_{int(usr[3])}", new_week_data, None)
-        [
-            cache.set(f"week_{int(usr[3])}", {day_week: value}, None)
-            for _, value in data_weeks.items()
-        ]
+        """Получение количества кликов по всем ссылкам пользователя"""
+        obj_stat_today = cache.get_many(cache.keys(f"statx_click_{usr[3]}_*"))
+        week_stat = {
+            f"week_{day_week}_{key}": values for (key, values) in obj_stat_today.items()
+        }
+        cache.set_many(week_stat, 1500000)
+        WriteStat.end_day(obj_stat_today, usr)
 
     @staticmethod
     def one_hour() -> None:
+        """Записываем информацию по кликам пользователей по ссылкам 1-м большим запросом
+        за 1 час либо по достижению 1000 запмсей в кеше"""
         InfoLink.objects.bulk_create(
             [*OrderedDict(cache.get_many(cache.keys("statx_info_*"))).values()]
         )
-        cache.delete_pattern("statx_info_*")  # Из за отправки статистики по повторным нажатиям, перенести эту хуету на 00-00 очистку
+        cache.delete_pattern(
+            "statx_info_*"
+        )  # Из за отправки статистики по повторным нажатиям, перенести эту хуету на 00-00 очистку
         cache.set("count_cache_infolink", 0, None)  # Эту строку в самый низ
-    
+
     @staticmethod
-    def end_day() -> None:
-        clicks = OrderedDict(cache.get_many(cache.keys("statx_click_*")))
-        again_clicks = OrderedDict(cache.get_many(cache.keys("statx_aclick_*")))
+    def end_day(obj_stat_today=False, usr=False) -> None:
+        """Функция вызывается в фоновом процессе Celery если у пользователя его
+        местное время 00-00 и очищает кешированную информацию за уже прошедший день.
+        В новый день со свежей инфой! :) """
+        if obj_stat_today and usr:
+            clicks = obj_stat_today
+            again_clicks = OrderedDict(
+                cache.get_many(cache.keys(f"statx_aclick_{usr[3]}_*"))
+            )
+        else:
+            clicks = OrderedDict(cache.get_many(cache.keys(f"statx_click_{usr[3]}*")))
+            again_clicks = OrderedDict(
+                cache.get_many(cache.keys(f"statx_aclick_{usr[3]}_*"))
+            )
         result = {
-            key: (int(key[12:]), clicks[key], again_clicks[f"statx_aclick_{key[12:]}"])
+            key: (
+                int(key[int(key.rfind("_") + 1) :]),
+                clicks[key],
+                again_clicks[
+                    f"statx_aclick_{usr[3]}_{int(key[int(key.rfind('_') + 1):])}"
+                ],
+            )
             for key in clicks
         }
         data = [

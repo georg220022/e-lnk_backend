@@ -3,15 +3,18 @@ from django.urls import path, include
 from django.conf import settings
 
 
-
 urlpatterns = [
-    #path('grappelli/', include('grappelli.urls')),
     path("admin_dash", admin.site.urls),
     path("", include("elink_redirect.urls")),
     path("api/v1", include("elink_index.urls")),
     path("api/v1", include("users.urls")),
     path("api/v1/panel", include("personal_area.urls")),
 ]
+
+handler404 = "service.handlers.handler404"
+# handler500 = "service.handlers.handler500"
+handler403 = "service.handlers.handler403"
+handler400 = "service.handlers.handler400"
 
 if settings.DEBUG:
     from django.conf.urls.static import static

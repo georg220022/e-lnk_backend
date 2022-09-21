@@ -12,12 +12,13 @@ from .server_stat import ServerStat
 class RegMail:
     @staticmethod
     def send_code(user_instance: User) -> None:
+        """Отправка кода регистрации"""
         activation_code = Generator_activation_code.public_id()
         activate_link = (
             "https://e-lnk.ru/api/v1/activate"
             + f"/{user_instance.id}/{activation_code}"
         )
-        message = get_template("mail.html").render({"activate_link": activate_link})
+        message = get_template("reg-confirm-email.html").render({"activate_link": activate_link})
         msg = EmailMessage(
             "Регистрация E-LNK.RU",
             message,
@@ -31,13 +32,11 @@ class RegMail:
 
     @staticmethod
     def send_stat_pdf(yesterday: datetime) -> None:
+        """Отправка статистики пользователям"""
         list_mail = os.listdir("pdf_storage")
         for email_user in list_mail:
             try:
-                message = (
-                    "Обращаем Ваше внимание, что данная статистика не хранится на нашем сайте и поэтому восстановить ее не получится, советуем сохранить данное письмо."
-                    + "Данный отчет сгенерирован автоматически и отвечать на него не нужно."
-                )
+                message = get_template("links-info-email.html").render({"date_stat": yesterday})
                 msg = EmailMessage(
                     f"Отчет за прошедший день - {yesterday}",
                     message,

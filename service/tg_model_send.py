@@ -51,52 +51,53 @@ class TelegramStat:
             "Неудачных входов",
             "Неудачных активаций аккаунта",
         ]
-        data_stat = cache.get_many([
-            "server_no_long_link",  # Не верная длина ссылки
-            "server_check_pass",  # Обращение к ссылке с паролем
-            "server_open_bad_time",  # Открытий ссылки с истекшим сроком
-            "server_bad_data",  # Сколько раз не получен "shortCode" и-или "linkPassword"
-            "server_bad_edit_descrip",  # Сколько раз не верно изменили описание
-            "server_bad_try_create_user_link",  # Попыток создания ссылки без активированной учетной записи
-            "server_bad_valid_serializer_create_link",  # Не прошло валидацию создание ссылки от юзера
-            "server_bad_delete_link",  # Плохих попыток удаления ссылки
-            "server_bad_update_desrip_link",  # Плохих попыток изменить описание
-            "server_redis_redirect",  # Переходов по Redis ссылке (гостевой)
-            "server_open_bad_link",  # Попыток открыть не существующие ссылки
-            "server_bad_input_pass",  # Не верных вводов пароля
-            "server_good_input_pass",  # Верных вводов пароля
-            "server_empty_pass_open_lnk",  # Пришло пустых паролей
-            "server_get_stat_in_cache",  # Сколько раз взяли статистику панели из кеша
-            "server_get_stat_in_serializer",  # Сколько раз взяли статистику НЕ из кеша
-            "server_unknown_coutry",  # Не удалось определить страну
-            "server_redis_atribute_error",  # Взять из базы редиса не существующую ссылку
-            "server_redis_index_error", # Взять из базы редиса не существующую ссылку
-            "server_pstgrs_obj_doesnt_exist",  # Взять из базы постгреса не существующую ссылку
-            "server_bad_send_pdf_day_stat",  # Не удачных отправок ежедневной статы
-            "server_need_clear_cache",  # Досрочных запросов на запись кликов из кеша в БД
-            "server_user_reg_limit_lnk",  # Сколько разполучено сообщение о лимите ссылок обычному юзеру
-            "server_user_btest_limit_lnk",  # Сколько разполучено сообщение о лимите ссылок бетатестерам
-            "server_try_create_lnk_ban_usr",  # Попыток создать ссылку забаненным юзером
-            "server_bad_try_update_refresh",  # Неудачных попыток обновить refresh token
-            "server_bad_change_pass",  # Неудачных попыток сменить пароль
-            "server_good_change_pass",  # Удачно смененные пароли
-            "server_error_register",  # Ошибок при регистрации
-            "server_logout_account",  # Логаутов из аккаунта
-            "server_enter_notfound_email",  # Попыток входа с несуществующим емейлом
-            "server_guest_link",  # Количество ссылок от гостей
-            "server_delete_link",  # Ссылок удалено пользователями
-            "server_update_desrip_link",  # Обновлено описаний
-            "server_new_users",  # Новых пользователей
-            "server_send_msg_email",  # Отправлено активаций
-            "server_activated",  # Активированно аккаунтов
-            "server_reg_link",  # Количество ссылок от зарегестрированных юзеров
-            "server_redirect",  # Переходов за сегодня
-            "server_refresh_tokens",  # Обновлено токенов
-            "server_good_enter",  # Входов в аккаунт удачных (ввести логин-пароль)
-            "server_bad_enter",  # Входов в аккаунт НЕ удачных (ввести логин-пароль)
-            "server_bad_try_activated",  # Неудачных попыток активации
+        data_stat = cache.get_many(
+            [
+                "server_no_long_link",  # Не верная длина ссылки
+                "server_check_pass",  # Обращение к ссылке с паролем
+                "server_open_bad_time",  # Открытий ссылки с истекшим сроком
+                "server_bad_data",  # Сколько раз не получен "shortCode" и-или "linkPassword"
+                "server_bad_edit_descrip",  # Сколько раз не верно изменили описание
+                "server_bad_try_create_user_link",  # Попыток создания ссылки без активированной учетной записи
+                "server_bad_valid_serializer_create_link",  # Не прошло валидацию создание ссылки от юзера
+                "server_bad_delete_link",  # Плохих попыток удаления ссылки
+                "server_bad_update_desrip_link",  # Плохих попыток изменить описание
+                "server_redis_redirect",  # Переходов по Redis ссылке (гостевой)
+                "server_open_bad_link",  # Попыток открыть не существующие ссылки
+                "server_bad_input_pass",  # Не верных вводов пароля
+                "server_good_input_pass",  # Верных вводов пароля
+                "server_empty_pass_open_lnk",  # Пришло пустых паролей
+                "server_get_stat_in_cache",  # Сколько раз взяли статистику панели из кеша
+                "server_get_stat_in_serializer",  # Сколько раз взяли статистику НЕ из кеша
+                "server_unknown_coutry",  # Не удалось определить страну
+                "server_redis_atribute_error",  # Взять из базы редиса не существующую ссылку
+                "server_redis_index_error",  # Взять из базы редиса не существующую ссылку
+                "server_pstgrs_obj_doesnt_exist",  # Взять из базы постгреса не существующую ссылку
+                "server_bad_send_pdf_day_stat",  # Не удачных отправок ежедневной статы
+                "server_need_clear_cache",  # Досрочных запросов на запись кликов из кеша в БД
+                "server_user_reg_limit_lnk",  # Сколько разполучено сообщение о лимите ссылок обычному юзеру
+                "server_user_btest_limit_lnk",  # Сколько разполучено сообщение о лимите ссылок бетатестерам
+                "server_try_create_lnk_ban_usr",  # Попыток создать ссылку забаненным юзером
+                "server_bad_try_update_refresh",  # Неудачных попыток обновить refresh token
+                "server_bad_change_pass",  # Неудачных попыток сменить пароль
+                "server_good_change_pass",  # Удачно смененные пароли
+                "server_error_register",  # Ошибок при регистрации
+                "server_logout_account",  # Логаутов из аккаунта
+                "server_enter_notfound_email",  # Попыток входа с несуществующим емейлом
+                "server_guest_link",  # Количество ссылок от гостей
+                "server_delete_link",  # Ссылок удалено пользователями
+                "server_update_desrip_link",  # Обновлено описаний
+                "server_new_users",  # Новых пользователей
+                "server_send_msg_email",  # Отправлено активаций
+                "server_activated",  # Активированно аккаунтов
+                "server_reg_link",  # Количество ссылок от зарегестрированных юзеров
+                "server_redirect",  # Переходов за сегодня
+                "server_refresh_tokens",  # Обновлено токенов
+                "server_good_enter",  # Входов в аккаунт удачных (ввести логин-пароль)
+                "server_bad_enter",  # Входов в аккаунт НЕ удачных (ввести логин-пароль)
+                "server_bad_try_activated",  # Неудачных попыток активации
             ]
-        )      
+        )
         data_reports = cache.get("reporteds")
         if isinstance(data_reports, type(None)):
             data_reports = ""
@@ -122,6 +123,9 @@ class TelegramStat:
                 )
         else:
             data_string += "| Замечаний нет.\n"
-        data_service_time = [f'Начало: {key},   Заняло:{value}' for key, value in cache.get('time_service').items()]
+        data_service_time = [
+            f"Начало: {key},   Заняло:{value}"
+            for key, value in cache.get("time_service").items()
+        ]
         data_string += f"\n Сервисное ежечасное самообслуживание:\n{data_service_time}"
         return data_string

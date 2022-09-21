@@ -4,6 +4,7 @@ import random
 class GeneratorCode:
     @staticmethod
     def for_postgresql() -> str:
+        """Генератор короткого кода для ссылки НЕ содержащей буквы r-R"""
         data = "123456DFGHJKLZXCVBNM7890qwezxcvbnmQWETYUItyuiopasdfghjklOPAS"
         random_p = random.randint(1, 9)
         new_url = ""
@@ -15,6 +16,7 @@ class GeneratorCode:
 
     @staticmethod
     def for_redis() -> str:
+        """Генератор короткого кода для ссылки НЕ содержащей буквы p-P"""
         data = "1OA567890qwertyuioSDFGHJKLZXC234asdfghjklzxcvbnmQWERTYUIVBNM"
         random_r = random.randint(1, 9)
         new_url = ""
@@ -26,6 +28,12 @@ class GeneratorCode:
 
     @staticmethod
     def public_id() -> str:
+        """Генерация публичного кода для пользователя, по нему авторизация JWT
+        ищет пользователя, код меняется при смене пароля, что позволит деавторизовать
+        любое устройство если данные браузера пользователя были украдены, можно сказать
+        аналог отзываемых токенов без <белого списка> токенов, что позволяет при каждом обновлении
+        refresh токена пользователем экономить 1 запрос в базу данных для проверки наличия или
+        отсутствия токена в <белом списке>"""
         new_public_key = ""
         data = "123456DFGHJKLZXCVBNM7890qwezxcvbnmQWETYUItyuiopasdfghjklOPAS"
         for _ in range(10):

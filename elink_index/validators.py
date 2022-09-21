@@ -77,12 +77,15 @@ class CheckLink:
             return False
 
     def description(request_obj: HttpRequest) -> Union[bool, LinkRegUser]:
-        obj_id = request_obj.data.get("shortCodes", False)
+        obj_id = request_obj.data.get("shortLink", False)
+        if obj_id:
+            obj_id = obj_id[17:]
+        print(obj_id)
         link_obj = get_object_or_404(LinkRegUser, short_code=obj_id)
         if request_obj.user.id == link_obj.author.id:
-            obj_descrip = request_obj.data.get("linkName", False)
-            if obj_descrip is not False:
-                if len(obj_descrip) > 0 and len(obj_descrip) <= 25:
-                    return link_obj
+            if "linkName" in request_obj.data:
+                return link_obj
+            if "linkPassword" in request_obj.data:
+                return link_obj
         cache.incr("server_bad_edit_descrip")
         return False

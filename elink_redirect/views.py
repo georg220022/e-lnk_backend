@@ -9,7 +9,7 @@ from rest_framework.decorators import api_view, throttle_classes, permission_cla
 
 from service.read_write_base import RedisLink, PostgresLink
 from service.stat_get import StatisticGet
-from elink.settings import SITE_NAME, TIME_SAVE_COOKIE
+from elink.settings import TIME_SAVE_COOKIE
 from elink_index.validators import CheckLink
 
 from .throttle import PassAnonymousThrottle, PassLinkUserThrottle
@@ -33,10 +33,12 @@ def open_link(request: HttpRequest, short_code: str) -> Response:
                     "password": object_postgres.secure_link,
                     "limited_link": object_postgres.limited_link,
                     "id": object_postgres.id,
-                    "author_id": object_postgres.author_id
+                    "author_id": object_postgres.author_id,
                 }
                 cache.set(f"open_{object_postgres.short_code}", data, 1200)
-                return redirect(f"https://e-lnk.ru/password-check.html?open_{short_code}")
+                return redirect(
+                    f"https://e-lnk.ru/password-check.html?open_{short_code}"
+                )
             else:
                 if not CheckLink.check_limited(object_postgres):
                     return redirect("https://e-lnk.ru/end_limit")
@@ -47,7 +49,7 @@ def open_link(request: HttpRequest, short_code: str) -> Response:
                 )
                 return response
     cache.incr("server_open_bad_link")
-    return redirect("https://e-lnk.ru/end_limit")
+    return redirect("https://e-lnk.ru/404")
 
 
 @api_view(["POST"])
@@ -61,7 +63,7 @@ def unlock_pass(request: HttpRequest) -> Response:
         if obj:
             if str(obj["password"]) == passwd:
                 if not CheckLink.check_limited(obj, secure=True):
-                    return redirect(SITE_NAME + "/end_limit")
+                    return redirect("https://e-lnk.ru/end_limit")
                 StatisticGet.collect_stats(request, obj, secure=True)
                 datas = {"longLink": obj["long_link"]}
                 response = Response(datas)

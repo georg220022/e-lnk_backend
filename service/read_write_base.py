@@ -1,4 +1,3 @@
-
 from typing import Union
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.cache import cache
@@ -71,7 +70,7 @@ class PostgresLink:
                     "limited_link",
                     "start_link",
                     "date_stop",
-                    "author_id"
+                    "author_id",
                 ).get(short_code=short_code)
             except ObjectDoesNotExist:
                 cache.incr("server_pstgrs_obj_doesnt_exist")

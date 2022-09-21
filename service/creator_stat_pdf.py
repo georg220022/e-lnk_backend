@@ -6,6 +6,7 @@ from django.db.models import Q
 
 
 class StatCreate:
+    """Запись данных в pdf файл"""
     def every_day_stat(usr) -> None:
         query_list = list(
             InfoLink.objects.select_related("link_check")
@@ -25,14 +26,12 @@ class StatCreate:
         )
         data_user = []
         for info in serializer.data:
-            # new_data = ["1", info["statistics"] ]
             if info["linkName"] == "":
                 info["linkName"] = "Название не заполнено"
             total = sum(info["statistics"]["clicks"].values())
             pc = info["statistics"]["clicks"]["pc"]
             phone = info["statistics"]["clicks"]["mobile"]
             other = info["statistics"]["clicks"]["other"]
-            # print((*info["statistics"]["hours"]))
             re_click = cache.get(f"statx_aclick_24_{info['linkId']}")
             if not re_click:
                 re_click = 0

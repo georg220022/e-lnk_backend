@@ -35,7 +35,7 @@ class CustomRefresh(viewsets.ViewSet, BlacklistMixin):
         }
         old_token = request.COOKIES.get("refresh", False)
         if old_token:
-            if isinstance(old_token, bytes):
+            if isinstance(old_token, str):
                 try:
                     RefreshToken(old_token).blacklist()
                 except Exception as e:
@@ -71,7 +71,7 @@ class CustomRefresh(viewsets.ViewSet, BlacklistMixin):
             key="refresh",
             value=str(refresh),
             expires=5184000,
-            secure=False,  # серв нет поддержки шифрования
+            secure=True,  # серв нет поддержки шифрования
             httponly=True,
         )
         cache.incr("server_refresh_tokens")
@@ -138,7 +138,7 @@ class RegistrationAPIView(APIView):
                     key="refresh",
                     value=str(refresh),
                     expires=5184000,
-                    secure=False,  # рансервер не поддерживает https
+                    secure=True,  # рансервер не поддерживает https
                     httponly=True,
                 )
                 data.set_cookie("registration_elink", max_age=2592000)
@@ -190,7 +190,7 @@ class EntersOnSite(viewsets.ViewSet):
                         key="refresh",
                         value=refresh,
                         expires=5184000,
-                        secure=False,  # Изменить на сервере
+                        secure=True,  # Изменить на сервере
                         httponly=True,
                     )
                     cache.incr("server_good_enter")
@@ -199,6 +199,7 @@ class EntersOnSite(viewsets.ViewSet):
                     msg = "Не верный пароль"
             else:
                 msg = "Не верный емейл или пароль"
+        msg = "Неудалось войти, код ошибки #usvi202"
         err = {"error": msg}
         cache.incr("server_bad_enter")
         return Response(err, status=status.HTTP_400_BAD_REQUEST)

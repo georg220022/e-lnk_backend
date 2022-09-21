@@ -7,12 +7,9 @@ admin.site.unregister(auth.models.Group)
 
 @admin.register(LinkRegUser)
 class LinkRegUserAdmin(admin.ModelAdmin):
-    actions = [
-        
-    ]
     fields = [
-        "id",
         "description",
+        "long_link",
         "date_add",
         "limited_link",
         "secure_link",
@@ -37,10 +34,10 @@ class LinkRegUserAdmin(admin.ModelAdmin):
         "author",
     ]
     search_fields = ["short_code"]
-    list_filter = ["author"]
+    list_filter = ["author", "limited_link"]
 
     def has_add_permission(self, request):
-        return True
+        return False
 
 
 @admin.register(User)
@@ -59,6 +56,7 @@ class UserAdmin(admin.ModelAdmin):
         "ban_bad_account",
     ]
     list_display = [
+        "id",
         "email",
         "subs_type",
         "date_join",

@@ -1,16 +1,19 @@
-from typing import Dict
 import datetime
 
-from django.core.cache import cache
 from rest_framework import serializers
+from service.cache_module import CacheModule
+from service.user_time_now import UserTime
+from service.statistic_link import StatLink
 
-from elink.settings import SITE_NAME
 from elink_index.models import LinkRegUser
+
+SITE_NAME = "https://e-lnk.ru/"
 
 
 class StatSerializer(serializers.ModelSerializer):
 
     statistics = serializers.SerializerMethodField(read_only=True)
+    lock = serializers.SerializerMethodField(read_only=True)
     linkId = serializers.ModelField(model_field=LinkRegUser()._meta.get_field("id"))
     shortLink = serializers.SerializerMethodField("get_short_link")
     longLink = serializers.ModelField(
@@ -28,41 +31,33 @@ class StatSerializer(serializers.ModelSerializer):
     linkStartDate = serializers.ModelField(
         model_field=LinkRegUser()._meta.get_field("start_link")
     )
-    #linkCreatedDate = serializers.ModelField(
-    #    model_field=LinkRegUser()._meta.get_field("date_add")
-    #)
     clicked = serializers.ModelField(
         model_field=LinkRegUser()._meta.get_field("how_many_clicked")
     )
     repeatedClicked = serializers.ModelField(
         model_field=LinkRegUser()._meta.get_field("again_how_many_clicked")
     )
-    linkStartDate = serializers.DateTimeField(format="%Y-%m-%dT%H:%MZ", source="start_link", read_only=True) # format="%Y-%m-%dT%H:%M:%S%z",  format="%Y-%m-%dT%H:%M:%S%Z", 
-    linkCreatedDate = serializers.DateTimeField(format="%Y-%m-%dT%H:%MZ", source="date_add", read_only=True)# input_formats=None format="%Y-%m-%dT%H:%M:%S",
-    linkEndDate = serializers.DateTimeField(format="%Y-%m-%dT%H:%MZ", source="date_stop", read_only=True)
+    linkStartDate = serializers.DateTimeField(
+        format="%Y-%m-%dT%H:%M", source="start_link", read_only=True
+    )
+    linkCreatedDate = serializers.DateTimeField(
+        format="%Y-%m-%dT%H:%M", source="date_add", read_only=True
+    )
+    linkEndDate = serializers.DateTimeField(
+        format="%Y-%m-%dT%H:%M", source="date_stop", read_only=True
+    )
     qr = serializers.CharField(read_only=True)
 
     class Meta:
         model = LinkRegUser
-        exclude = (
-            "short_code",
-            "long_link",
-            "start_link",
-            "secure_link",
-            "date_stop",
-            "author",
-            "date_add",
-            "public_stat_full",
-            "public_stat_small",
-            "again_how_many_clicked",
-            "how_many_clicked",
-            "limited_link",
-            "description",
-            "id",
-        )
+        fields = ("qr",)
         read_only_fields = ("__all__",)
 
     def to_representation(self, instance):
+        """
+        Если запрос пришел из панели или из фоновых задач celery
+            изменить время под UTC пользователя указанное в настройках
+        """
         if self.context["action"] == "get_full_stat" or "task_celery":
             user_tz = datetime.timedelta(hours=int(self.context["user_tz"]))
             if isinstance(instance.start_link, datetime.datetime):
@@ -84,76 +79,75 @@ class StatSerializer(serializers.ModelSerializer):
     def get_statistics(self, obj: LinkRegUser) -> dict:
         obj_lnk = self.context["query_list"]
         user_tz = self.context["user_tz"]
+        day_week = UserTime.day_week_now(user_tz, need_day_week=True)
         data = [
             obj_lnk.pop(obj_lnk.index(info_lnk))
             for info_lnk in obj_lnk
             if info_lnk["link_check_id"] == obj.id
         ]
-        device = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0}
-        hour = {
-            0: 0,
-            1: 0,
-            2: 0,
-            3: 0,
-            4: 0,
-            5: 0,
-            6: 0,
-            7: 0,
-            8: 0,
-            9: 0,
-            10: 0,
-            11: 0,
-            12: 0,
-            13: 0,
-            14: 0,
-            15: 0,
-            16: 0,
-            17: 0,
-            18: 0,
-            19: 0,
-            20: 0,
-            21: 0,
-            22: 0,
-            23: 0,
-        }
-        countrys: Dict = {}
-        for objs in data:
-            device[objs["device_id"]] += 1
-            if objs["country"] in countrys:
-                countrys[objs["country"]] += 1
-            else:
-                countrys[objs["country"]] = 1
-            objs["device"] = device
-            tz_key = int(objs["date_check"].strftime("%H")) + int(user_tz)
-            if tz_key in hour.keys():
-                hour[tz_key] += 1
-            else:
-                if tz_key > 23:
-                    new_key = (tz_key - 23)
-                else:
-                    new_key = (23 + tz_key)
-                hour[new_key] += 1
-        clicked = {
-            "mobile": device[1] + device[3] + device[4],
-            "pc": device[2] + device[5] + device[6],
-            "other": device[7],
-        }
-        re_clicked_today = cache.get(
-            f"statx_aclick_{obj.author_id}_{obj.id}"
-        )
-        clicked_today = cache.get(
-            f"statx_click_{obj.author_id}_{obj.id}"
-        )
-        if not isinstance(re_clicked_today, int):
-            re_clicked_today = 0
-        if not isinstance(clicked_today, int):
-            clicked_today = 0
-        hour.update({24: 0})
-        return {
+        hour, device, countrys = StatLink.per_24_hour(data, user_tz)
+        re_clicked_today, clicked_today = CacheModule.get_today_click_link(obj)
+        data_obj = {
             "country": countrys,
             "device": device,
             "hours": hour,
-            "clicks": clicked,
-            "reClickedToday": int(re_clicked_today),
-            "clickedToday": int(clicked_today)
+            "reClickedToday": re_clicked_today,
+            "clickedToday": clicked_today,
         }
+        """
+        Если запрос пришел из панели управления
+            отдаем полную информацию за сегодняшний день.
+        В ином случае полная статистика не нужна, достаточно 
+            с каких устройств и сколько раз перешли
+        """
+        if self.context["action"] == "get_full_stat":
+            days = CacheModule.get_days_click_link(day_week, obj)
+            actual_click_today = days[day_week] + clicked_today
+            days[day_week] = actual_click_today
+            os = {
+                1: device[1],
+                2: device[2],
+                3: device[3],
+                4: device[4],
+                5: device[5],
+                6: device[6],
+                7: device[7],
+            }
+            device = {
+                "1": device[1] + device[3] + device[4],
+                "2": device[2] + device[5] + device[6],
+                "3": device[7],
+            }
+            data_obj["days"] = days
+            data_obj["os"] = os
+        else:
+            clicked = {
+                "mobile": device[1] + device[3] + device[4],
+                "pc": device[2] + device[5] + device[6],
+                "other": device[7],
+            }
+            data_obj["clicks"] = clicked
+        return data_obj
+
+    def get_lock(self, obj):
+        if len(obj.secure_link) > 0:
+            return True
+        return False
+
+
+"""exclude = (
+            "short_code",
+            "long_link",
+            "start_link",
+            "secure_link",
+            "date_stop",
+            "author",
+            "date_add",
+            "public_stat_full",
+            "public_stat_small",
+            "again_how_many_clicked",
+            "how_many_clicked",
+            "limited_link",
+            "description",
+            "id",
+        )"""
