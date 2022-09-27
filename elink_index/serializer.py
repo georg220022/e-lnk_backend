@@ -10,7 +10,7 @@ from service.server_stat import ServerStat
 
 from .models import LinkRegUser
 
-SITE_NAME = "https://e-lnk.ru/"
+SITE_NAME = "e-lnk.ru/"
 
 
 class LinkAuthSerializer(serializers.ModelSerializer):
@@ -47,9 +47,6 @@ class LinkAuthSerializer(serializers.ModelSerializer):
         required=False,
         model_field=LinkRegUser()._meta.get_field("again_how_many_clicked"),
     )
-    # qr = serializers.Serializer
-    # linkStartDate = serializers.DateTimeField(source='start_link')
-    # linkCreatedDate = serializers.DateTimeField(format='%Y-%m-%dT%H:%M:%S%z', source='date_add')#, input_formats=None
 
     class Meta:
         model = LinkRegUser
@@ -58,51 +55,7 @@ class LinkAuthSerializer(serializers.ModelSerializer):
             "short_code",
             "date_add",
         )
-        exclude = ("__all__",)
-
-    def validate(self, data):
-        """ Делаем из CamelCase питонячий snake_case"""
-        data.pop("longLink")
-        data["short_code"] = GeneratorShortCode.for_postgresql()
-        data["date_add"] = datetime.utcnow()  # timezone.now()
-        data["description"] = data.pop("linkName", "")
-        data["limited_link"] = data.pop("linkLimit", -1)
-        data["secure_link"] = data.pop("linkPassword", "")
-        data["start_link"] = data.pop("linkStartDate", None)
-        data["date_stop"] = data.pop("linkEndDate", None)
-        data["long_link"] = self.context["long_link"]
-        data["author_id"] = self.context["user_id"]
-        return data
-
-    def create(self, validated_data):
-        short_link = SITE_NAME + validated_data["short_code"]
-        qr = QrGenerator.qr_base64(short_link)
-        
-        try:
-            return LinkRegUser.objects.create(**validated_data, qr=qr)
-        except IntegrityError as e:
-            ServerStat.reported(
-                "LinkAuthSerializer_76",
-                "создался уже существующий short_code!"
-                + f"текст ошибки IntegrityError: {e}",
-            )
-            validated_data.pop("short_code", None)
-            short_code = GeneratorShortCode.for_postgresql()
-            short_link = SITE_NAME + short_code
-            qr = QrGenerator.qr_base64(short_link)
-            return LinkRegUser.objects.create(**validated_data, qr=qr, short_code=short_code)
-
-    def get_short_link(self, obj) -> str:
-        short_link = SITE_NAME + obj.short_code
-        return short_link
-
-    """def get_qr(self, obj: LinkRegUser) -> str:
-        short_link = SITE_NAME + obj.short_code
-        qr_code_base64 = QrGenerator.qr_base64(short_link)
-        return qr_code_base64
-"""
-
-"""        exclude = (
+        exclude = (
             "short_code",
             "long_link",
             "start_link",
@@ -117,4 +70,44 @@ class LinkAuthSerializer(serializers.ModelSerializer):
             "limited_link",
             "description",
             "id",
-        )"""
+        )
+
+    def validate(self, data):
+        """Делаем из CamelCase питонячий snake_case"""
+        data.pop("longLink")
+        data["short_code"] = GeneratorShortCode.for_postgresql()
+        data["date_add"] = datetime.utcnow()
+        data["description"] = data.pop("linkName", "")
+        data["limited_link"] = data.pop("linkLimit", -1)
+        data["secure_link"] = data.pop("linkPassword", "")
+        data["start_link"] = data.pop("linkStartDate", None)
+        data["date_stop"] = data.pop("linkEndDate", None)
+        data["long_link"] = self.context["long_link"]
+        data["author_id"] = self.context["user_id"]
+        return data
+
+    def create(self, validated_data):
+        short_link = SITE_NAME + validated_data["short_code"]
+        qr = QrGenerator.qr_base64(short_link)
+        try:
+            return LinkRegUser.objects.create(**validated_data, qr=qr)
+        except IntegrityError as e:
+            ServerStat.reported(
+                "LinkAuthSerializer_76",
+                "создался уже существующий short_code!"
+                + f"текст ошибки IntegrityError: {e}",
+            )
+            validated_data.pop("short_code", None)
+            short_code = GeneratorShortCode.for_postgresql()
+            short_link = SITE_NAME + short_code
+            qr = QrGenerator.qr_base64(short_link)
+            return LinkRegUser.objects.create(
+                **validated_data, qr=qr, short_code=short_code
+            )
+        except:
+            data = {"error": "Пожалуйста, пересоздайте ссылку"}
+            return (data)
+
+    def get_short_link(self, obj) -> str:
+        short_link = SITE_NAME + obj.short_code
+        return short_link

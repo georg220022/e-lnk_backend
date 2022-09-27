@@ -68,7 +68,8 @@ class CacheModule:
                 "reClickedToday": re_clicked_today,
                 "clickedToday": clicked_today,
             }
-            old_data.append(OrderedDict(fake_data))
+            old_data.insert(0, OrderedDict(fake_data))
+            # old_data.append(OrderedDict(fake_data))
             timer = int(cache.ttl(user_id))
             cache.set(user_id, old_data, timer)
 
@@ -80,7 +81,7 @@ class CacheModule:
         old_data = cache.get(user_id)
         if old_data:
             for obj in old_data:
-                short_code = obj["shortLink"][17:]
+                short_code = obj["shortLink"][9:]
                 if short_code == link.short_code:
                     obj["linkName"] = description
                     if passwd:
@@ -97,11 +98,15 @@ class CacheModule:
         """Модуль удаления информации из кеша, для правильного отображения кешированной информации в панели"""
         old_data = cache.get(user_id)
         new_data = []
+        key_delete_data = []
         if old_data and len(id_data) > 0:
             for data in old_data:
-                short_link = data["shortLink"][17:]
+                short_link = data["shortLink"][9:]
                 if short_link in id_data:
-                    pass
+                    ids = data["linkId"]
+                    key_delete_data.append(f"statx_click_{user_id}_{ids}")
+                    key_delete_data.append(f"statx_aclick_{user_id}_{ids}")
+                    key_delete_data += cache.keys(f"statx_info_{ids}_*")
                 else:
                     new_data.append(data)
             if old_data:
@@ -109,6 +114,7 @@ class CacheModule:
                 cache.set(user_id, new_data, timer)
             else:
                 cache.delete(user_id)
+            cache.delete_many(key_delete_data)
 
     @staticmethod
     def count_lnk(user_id) -> bool:
@@ -145,3 +151,20 @@ class CacheModule:
         if not isinstance(clicked_today, int):
             clicked_today = 0
         return re_clicked_today, clicked_today
+    
+    @staticmethod
+    def get_save_and_remove_infolink(obj, hour, device_id, countrys):
+        data_calculated_info = cache.get(f"calculated_{obj.id}")
+        cache_hour = data_calculated_info["hour"]
+        cache_device = data_calculated_info["device"]
+        cache_countrys = data_calculated_info["countrys"]
+        for nums in range(23):
+            hour[nums] += cache_hour[nums] 
+        for nums in range(1, 7):
+            device_id[nums] += cache_device
+        for obj in cache_countrys:
+            if obj in countrys:
+                countrys[obj] += cache_countrys[obj]
+            else:
+                countrys[obj] = cache_countrys[obj]
+        return hour, device_id, countrys

@@ -1,8 +1,13 @@
 <html>
 <head>
 <script>
-    {{short_link}}
-</script>
+var text = {{short_link}};
+navigator.clipboard.writeText(text).then(function() {
     <meta http-equiv="refresh" content="0;URL={{long_link}}"/>
+}, function(err) {
+  <h1>Ошибка</h1>
+  console.error('Произошла ошибка : ', err);
+});
+</script>
 </head>
 </html>

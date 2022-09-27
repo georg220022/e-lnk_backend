@@ -3,7 +3,8 @@ from datetime import date, timedelta
 
 
 class PDF(FPDF):
-    """Модель PDF документа для статистики за прошедший день"""
+    """Модель(скелет) PDF документа для статистики за прошедший день"""
+
     yesterday = date.today() - timedelta(days=1)
     num_day = (yesterday).isoweekday()
     day_week_data = {

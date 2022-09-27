@@ -36,17 +36,17 @@ class CustomRefresh(viewsets.ViewSet, BlacklistMixin):
         old_token = request.COOKIES.get("refresh", False)
         if old_token:
             if isinstance(old_token, str):
-                try:
-                    RefreshToken(old_token).blacklist()
-                except Exception as e:
-                    ServerStat.reported(
-                        "CustomRefresh_42", f"Не удалось выдать новый токен {e}"
-                    )
-                    logger.warning(
-                        f"Старый токен: {old_token}, Request: {request}, Self: {self}"
-                    )
-                    cache.incr("server_bad_try_update_refresh")
-                    return Response(err_data, status=status.HTTP_401_UNAUTHORIZED)
+                # try:
+                RefreshToken(old_token)#.blacklist()
+                # except Exception as e:
+                #    ServerStat.reported(
+                #        "CustomRefresh_42", f"Не удалось выдать новый токен {e}"
+                #    )
+                #    logger.warning(
+                #        f"Старый токен: {old_token}, Request: {request}, Self: {self}"
+                #    )
+                #    cache.incr("server_bad_try_update_refresh")
+                #    return Response(err_data, status=status.HTTP_401_UNAUTHORIZED)
                 old_token = old_token[old_token.find(".") + 1 : old_token.rfind(".")]
                 base64_message = old_token
                 base64_bytes = base64_message.encode("ascii")

@@ -5,6 +5,7 @@ import io
 
 class QrGenerator:
     """Генератор QR кода без сохранения картинки в файл"""
+
     @staticmethod
     def qr_base64(short_url: str) -> str:
         qr = segno.make(short_url, mask=0)

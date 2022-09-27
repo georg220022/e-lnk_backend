@@ -26,8 +26,6 @@ class LinkRegUser(models.Model):
     description = models.CharField(
         null=True, max_length=1000, blank=True, verbose_name="Имя/Описание"
     )
-    # включить лимит по переходам
-    # limit = models.BooleanField(null=False, default=0)
     # количество переходов по ссылке
     limited_link = models.IntegerField(default=-1, blank=True, verbose_name="Лимит")
     # пароль на ссылку

@@ -21,19 +21,18 @@ class WriteStat:
     def one_hour() -> None:
         """Записываем информацию по кликам пользователей по ссылкам 1-м большим запросом
         за 1 час либо по достижению 1000 запмсей в кеше"""
+        keys_cache_info_link = cache.keys("statx_info_*")
         InfoLink.objects.bulk_create(
-            [*OrderedDict(cache.get_many(cache.keys("statx_info_*"))).values()]
+            [*OrderedDict(cache.get_many(keys_cache_info_link)).values()]
         )
-        cache.delete_pattern(
-            "statx_info_*"
-        )  # Из за отправки статистики по повторным нажатиям, перенести эту хуету на 00-00 очистку
+        cache.delete_many(keys_cache_info_link)  # Из за отправки статистики по повторным нажатиям, перенести эту хуету на 00-00 очистку
         cache.set("count_cache_infolink", 0, None)  # Эту строку в самый низ
 
     @staticmethod
     def end_day(obj_stat_today=False, usr=False) -> None:
         """Функция вызывается в фоновом процессе Celery если у пользователя его
         местное время 00-00 и очищает кешированную информацию за уже прошедший день.
-        В новый день со свежей инфой! :) """
+        В новый день со свежей инфой! :)"""
         if obj_stat_today and usr:
             clicks = obj_stat_today
             again_clicks = OrderedDict(

@@ -16,8 +16,8 @@ from .throttle import PassAnonymousThrottle, PassLinkUserThrottle
 
 
 def open_link(request: HttpRequest, short_code: str) -> Response:
-    # cache.clear() # {ХУЕТА КАКАЯ ТО}
-    if len(str(short_code)) == 11 or len(str(short_code)) == 66:
+    """Модуль открытия ссылки по короткой ссылке"""
+    if len(str(short_code)) == 11:
         object_redis = RedisLink.reader(short_code)
         if object_redis:
             cache.incr("server_redis_redirect")
@@ -56,6 +56,7 @@ def open_link(request: HttpRequest, short_code: str) -> Response:
 @permission_classes([AllowAny])
 @throttle_classes([PassLinkUserThrottle, PassAnonymousThrottle])
 def unlock_pass(request: HttpRequest) -> Response:
+    """Если ссылка запаролена"""
     short_code = request.data.get("shortCode", False)
     passwd = request.data.get("password", False)
     if passwd and short_code:
@@ -63,7 +64,9 @@ def unlock_pass(request: HttpRequest) -> Response:
         if obj:
             if str(obj["password"]) == passwd:
                 if not CheckLink.check_limited(obj, secure=True):
-                    return redirect("https://e-lnk.ru/end_limit")
+                    datas = {"longLink": "https://e-lnk.ru/end_limit"}
+                    response = Response(datas)
+                    return response  # redirect("https://e-lnk.ru/end_limit")
                 StatisticGet.collect_stats(request, obj, secure=True)
                 datas = {"longLink": obj["long_link"]}
                 response = Response(datas)

@@ -25,8 +25,9 @@ class PostlinkViewset(viewsets.ViewSet):
         return Throttle.choices_methods(self.action)
 
     def create_link(self, request: HttpRequest) -> Response:
+        """Создание ссылки со всеми сопутствующими проверками"""
         long_link = CheckLink.get_long_url(request.data)
-        if long_link: # is not False
+        if long_link:  # is not False
             if request.user.is_anonymous:
                 data = RedisLink.writer(long_link)
                 cache.incr("server_guest_link")
@@ -61,9 +62,10 @@ class PostlinkViewset(viewsets.ViewSet):
         return Response(data, status=status.HTTP_400_BAD_REQUEST)
 
     def delete_link(self, request: HttpRequest) -> Response:
+        """Удаляем ссылки из базы и так же записи о них из кеша"""
         short_links = request.data.get("shortLinks", False)
         if short_links is not False and len(short_links) > 0:
-            short_codes = [str(obj[17:]) for obj in short_links]  # 9 для e-lnk.ru
+            short_codes = [str(obj[9:]) for obj in short_links]
             author = self.request.user
             query_values = list(
                 LinkRegUser.objects.filter(
@@ -86,8 +88,9 @@ class PostlinkViewset(viewsets.ViewSet):
         return Response(msg, status=status.HTTP_403_FORBIDDEN)
 
     def update_description(self, request: HttpRequest) -> Response:
+        """Обновление описания и/или пароля(так же обновляется в кеше для правильного отображения, если есть кешированные данные)"""
         obj = CheckLink.description(request)
-        if obj: #  is not False
+        if obj:
             description = request.data.get("linkName", False)
             if description:
                 obj.description = description
@@ -121,15 +124,14 @@ class FastlinkViewset(viewsets.ViewSet):
         return Permissons.choices_methods(self.action)
 
     def create_link(self, request: HttpRequest, site: str) -> Response:
+        """Создание быстрой ссылки через 'ee' ali, ozon, wildberries"""
         long_code = request.META.get("HTTP_MY_URL", False)
         if long_code and len(long_code) < 5001:
             long_link = "https://" + site + ".ru" + long_code
             data = RedisLink.writer(long_link, fast_link=True)
             cache.incr("server_guest_link")
             context = {"short_link": data, "long_link": long_link}
-            return render(
-                request, "fast_redirect.html", context=context
-            )
+            return render(request, "fast_redirect.html", context=context)
         return redirect("https://e-lnk.ru/404")
 
     def handler404(request, exception):

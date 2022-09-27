@@ -40,7 +40,7 @@ class StatisticGet:
         request_obj: HttpRequest, obj: Union[LinkRegUser, dict], secure=False
     ) -> None:
         """Собираем информацию о кликах по ссылкам ДО 1000 штук, при достижении 1000 записей
-        в кеше ЛИБО по прошествию 1 часа(не зависимо от количества записей в кеше) 
+        в кеше ЛИБО по прошествию 1 часа(не зависимо от количества записей в кеше)
         произойдет запись в базу данных 1-м запросом"""
         date_check = (
             timezone.now()
@@ -71,7 +71,10 @@ class StatisticGet:
             device_id=device_id,
             link_check_id=ids,
         )
-        cache.set(f"statx_info_{dt.now()}", data, 180000)
+        cache.set(f"statx_info_{ids}_{dt.now()}", data, 180000)
+        if not cache.has_key(f"count_infolink_{author_id}"):
+            cache.set(f"count_infolink_{author_id}")
+        cache.incr(f"count_infolink_{author_id}")
         cache.incr("count_cache_infolink")
 
     @staticmethod

@@ -18,7 +18,9 @@ class RegMail:
             "https://e-lnk.ru/api/v1/activate"
             + f"/{user_instance.id}/{activation_code}"
         )
-        message = get_template("reg-confirm-email.html").render({"activate_link": activate_link})
+        message = get_template("reg-confirm-email.html").render(
+            {"activate_link": activate_link}
+        )
         msg = EmailMessage(
             "Регистрация E-LNK.RU",
             message,
@@ -36,7 +38,9 @@ class RegMail:
         list_mail = os.listdir("pdf_storage")
         for email_user in list_mail:
             try:
-                message = get_template("links-info-email.html").render({"date_stat": yesterday})
+                message = get_template("links-info-email.html").render(
+                    {"date_stat": yesterday}
+                )
                 msg = EmailMessage(
                     f"Отчет за прошедший день - {yesterday}",
                     message,

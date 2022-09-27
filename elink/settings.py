@@ -7,12 +7,13 @@ from django.core.cache import cache
 
 load_dotenv()
 
-# Подгружаем id чатов для отправки статистики админам
 TG_CHAT_DATA = [
     os.getenv("TELEGRAM_CHAT_1"),
     os.getenv("TELEGRAM_CHAT_2"),
     os.getenv("TELEGRAM_CHAT_3"),
 ]
+
+CSRF_TRUSTED_ORIGINS = ["https://e-lnk.ru", ]
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 
@@ -22,8 +23,12 @@ TIME_SAVE_COOKIE = os.getenv("TIME_SAVE_COOKIE")
 
 APPEND_SLASH = False
 ALLOWED_HOSTS = [
+    "*",
+    "127.0.0.1:8000",
+    "46.229.214.129",
     "127.0.0.1",
     "e-lnk.ru",
+    "https://e-lnk.ru",
 ]
 SECRET_KEY = os.getenv("SECRET_KEY")
 DEBUG = False
@@ -34,7 +39,7 @@ EMAIL_HOST = os.getenv("EMAIL_HOST")
 EMAIL_PORT = os.getenv("EMAIL_PORT")
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
-EMAIL_USE_TLS = False
+EMAIL_TLS = False
 EMAIL_USE_SSL = True
 
 REDIS_DB_COUNT = os.getenv("REDIS_DB_COUNT")
@@ -82,17 +87,11 @@ REDIS_BASE_FOR_CACHE_LINK = redis.StrictRedis(
     # decode_responses=True
 )
 
-# CORS_ORIGIN_ALLOW_ALL = False
-# CORS_URLS_REGEX = r"^/api/.*$"
-
-CSRF_TRUSTED_ORIGINS = ['https://e-lnk.ru']
-
-CELERY_BROKER_URL = f"redis://:{REDIS_PASS}@{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB_STAT}"  # Если запуск через контейнер - redis_db
+CELERY_BROKER_URL = f"redis://:{REDIS_PASS}@127.0.0.1:{REDIS_PORT}/{REDIS_DB_STAT}"  # Пока запускаю в докере - redis_db
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 
 INSTALLED_APPS = [
-    "rest_framework_simplejwt.token_blacklist",
     "jazzmin",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -101,7 +100,6 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-    # "corsheaders",
     "elink_redirect",
     "users",
     "elink_index",
@@ -112,16 +110,27 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    # Когда фронт будет запущен отдельным приложением - добавлю CORS
-    # "corsheaders.middleware.CorsMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+if DEBUG:
+    MIDDLEWARE += [
+        "debug_toolbar.middleware.DebugToolbarMiddleware",
+        "debug_toolbar_force.middleware.ForceDebugToolbarMiddleware",
+    ]
+    INSTALLED_APPS += ["debug_toolbar",]
 
 ROOT_URLCONF = "elink.urls"
+
+STATIC_URL = "static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
+
+MEDIA_URL = "media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "/media/")
 
 TEMPLATES = [
     {
@@ -140,6 +149,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "elink.wsgi.application"
+
 
 DATABASES = {
     "default": {
@@ -187,15 +197,15 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.AnonRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "user": os.getenv("USER"),
-        "anon": os.getenv("ANON"),
-        "create_link_user": os.getenv("CREATE_LINK_USER"),
-        "create_link_anonym": os.getenv("CREATE_LINK_ANONYM"),
-        "user_pass_try": os.getenv("USER_PASS_TRY"),
-        "anon_pass_try": os.getenv("ANON_PASS_TRY"),
-        "anon_registration": os.getenv("ANON_REGISTRATION"),
-        "pass_open_anon": os.getenv("ANON_TRY_PASS"),
-        "pass_open_user": os.getenv("USER_TRY_PASS"),
+        "user": "99999/hour", #os.getenv("USER"),
+        "anon": "99999/hour", #os.getenv("ANON"),
+        "create_link_user": "99999/hour", #os.getenv("CREATE_LINK_USER"),
+        "create_link_anonym": "99999/hour", #os.getenv("CREATE_LINK_ANONYM"),
+        "user_pass_try": "99999/hour", #os.getenv("USER_PASS_TRY"),
+        "anon_pass_try": "99999/hour", #os.getenv("ANON_PASS_TRY"),
+        "anon_registration": "99999/hour", #os.getenv("ANON_REGISTRATION"),
+        "pass_open_anon": "99999/hour", #os.getenv("ANON_TRY_PASS"),
+        "pass_open_user": "99999/hour", #os.getenv("USER_TRY_PASS"),
     },
 }
 
@@ -213,48 +223,17 @@ CACHES = {
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=int(ACCESS_TIME)),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=int(REFRESH_TIME)),
-    "ROTATE_REFRESH_TOKENS": True,
-    "BLACKLIST_AFTER_ROTATION": True,
-    "UPDATE_LAST_LOGIN": False,
+    "ROTATE_REFRESH_TOKENS": False, # Было тру
+    "BLACKLIST_AFTER_ROTATION": False, # Было тру
+    "UPDATLAST_LOGIN": False,
     "USER_ID_FIELD": "public_key",
-    "JTI_CLAIM": "jti",
+    #"JTI_CLAIM": "jti", было включено
 }
 
-# Если сервер запущен с дебагом, отключаем тротлинг, включаем статику и тулбары Django и DRF
-if DEBUG:
-    INSTALLED_APPS += ["debug_toolbar",]
-    MIDDLEWARE += [ 
-        "debug_toolbar.middleware.DebugToolbarMiddleware",
-        "debug_toolbar_force.middleware.ForceDebugToolbarMiddleware",
-    ]
-    STATIC_URL = "static/"
-    STATIC_ROOT = os.path.join(BASE_DIR, "static")
-
-    MEDIA_URL = "media/"
-    MEDIA_ROOT = os.path.join(BASE_DIR, "/media/")
-    
-    DEFAULT_THROTTLE_RATES = {
-        "user": "999999/hour",
-        "anon": "999999/hour",
-        "create_link_user": "999999/hour",
-        "create_link_anonym": "999999/hour",
-        "user_pass_try": "999999/hour",
-        "anon_pass_try": "999999/hour",
-        "anon_registration": "999999/hour",
-        "pass_open_anon": "999999/hour",
-        "pass_open_user": "999999/hour",
-    }
-    
-    REST_FRAMEWORK.update(DEFAULT_THROTTLE_RATES)
-    INTERNAL_IPS = ["127.0.0.1"]
-
-
-# Тема админ-панели
 JAZZMIN_UI_TWEAKS = {
     "theme": "cosmo",
 }
 
-#Настройки админ-панели
 JAZZMIN_SETTINGS = {
     "site_title": "Панель управления",
     "site_header": "E-LNK",
@@ -323,10 +302,7 @@ LOGGING = {
         },
     },
 }
-
-# Очищаем кеш полностью при перезагрузке сервера
-cache.clear()
-
+# cache.clear()
 # Техническая информация для отправки в telegram администратора(ов) ( Prometheus для бедных xD )
 stat_data = {
     "server_no_long_link": 0, # Не верная длина ссылки
@@ -353,8 +329,8 @@ stat_data = {
     "server_need_clear_cache": 0, # Досрочных запросов на запись кликов из кеша в БД
     "server_user_reg_limit_lnk": 0, # Сколько разполучено сообщение о лимите ссылок обычному юзеру
     "server_user_btest_limit_lnk": 0, # Сколько разполучено сообщение о лимите ссылок бетатестерам
-    "server_try_create_lnk_ban_usr": 0, # Попыток создать ссылку забаненным юзером
-    "server_bad_try_update_refresh": 0, # Неудачных попыток обновить refresh token
+    "server_try_create_lnk_ban_usr": 0, # Попыток оздаь ссылку забаннным юзеом
+    "serveстерr_bad_try_update_refresh": 0, # Неудачных попыток обновить refresh token
     "server_bad_change_pass": 0, # Неудачных попыток сменить пароль
     "server_good_change_pass": 0, # Удачно смененные пароли
     "server_error_register": 0, # Ошибок при регистрации

@@ -7,17 +7,22 @@ from django.db.models import Q
 
 class StatCreate:
     """Запись данных в pdf файл"""
+
     def every_day_stat(usr) -> None:
+        
+        #queryset = InfoLink.objects.select_related("link_check").only("author_id").filter(link_check__author_id=int(usr[3]))
+        #query_list = list(queryset.values())
         query_list = list(
             InfoLink.objects.select_related("link_check")
             .only("author_id")
             .filter(Q(link_check__author_id=int(usr[3])))
             .values()
-        )  # .values_list()
+        )
         context = {
             "query_list": query_list,
             "action": "task_celery",
             "user_tz": int(usr[3]),
+            "optimize_panel": False,
         }
         serializer = StatSerializer(
             LinkRegUser.objects.filter(author_id=int(usr[3])),
@@ -86,14 +91,14 @@ class StatCreate:
             7,
         )
         col_names_2 = [
-            "Общая информация",
+            "Общая информация за один день",
             "Устройства",
             "Подробная статистика за 24 часа",
         ]
         col_names = [
             "№",
             "Название",
-            "Всего кликов",
+            "Кликов",
             "Повторных",
             "ПК",
             "Телефоны",

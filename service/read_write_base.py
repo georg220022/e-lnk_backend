@@ -20,7 +20,7 @@ class RedisLink:
             short_code, long_link  # Запишем в Redis ключ это код_короткой ссылки,
         )  # редис удалит самые не используемые при нехватке памяти(настроено в redis.conf)
         short_link = (
-            "https://e-lnk.ru/" + short_code
+            "e-lnk.ru/" + short_code
         )  # "https://site.tu/" + "P12cfQsasjB", как пример.
 
         if not fast_link:
