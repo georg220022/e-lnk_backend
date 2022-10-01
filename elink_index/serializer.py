@@ -1,9 +1,7 @@
 from django.db import IntegrityError
-from django.utils import timezone
 from rest_framework import serializers
 from datetime import datetime
 
-# from elink.settings import SITE_NAME
 from service.generator_code import GeneratorCode as GeneratorShortCode
 from service.qr_generator import QrGenerator
 from service.server_stat import ServerStat
@@ -73,17 +71,27 @@ class LinkAuthSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, data):
-        """Делаем из CamelCase питонячий snake_case"""
-        data.pop("longLink")
+        """Делаем из CamelCase питонячий snake_case + валидируем данные"""
+        data.pop("longLink", False)
         data["short_code"] = GeneratorShortCode.for_postgresql()
         data["date_add"] = datetime.utcnow()
         data["description"] = data.pop("linkName", "")
+        if len(data["description"]) > 30:
+            data = {"error": "Максимальная длинна имени ссылки - 30 символов"}
+            raise serializers.ValidationError(data)
         data["limited_link"] = data.pop("linkLimit", -1)
+        if data["limited_link"] > 999999:
+            data = {"error": "Максимальное значение лимита переходов 999999"}
+            raise serializers.ValidationError(data)
         data["secure_link"] = data.pop("linkPassword", "")
+        if data["secure_link"] != "":
+            if len(data["secure_link"]) > 16:
+                data = {"error": "Максимальная длинна пароля - 16 символов"}
+                raise serializers.ValidationError(data)
         data["start_link"] = data.pop("linkStartDate", None)
         data["date_stop"] = data.pop("linkEndDate", None)
-        data["long_link"] = self.context["long_link"]
         data["author_id"] = self.context["user_id"]
+        data["long_link"] = self.context["long_link"]
         return data
 
     def create(self, validated_data):
@@ -106,7 +114,7 @@ class LinkAuthSerializer(serializers.ModelSerializer):
             )
         except:
             data = {"error": "Пожалуйста, пересоздайте ссылку"}
-            return (data)
+            return data
 
     def get_short_link(self, obj) -> str:
         short_link = SITE_NAME + obj.short_code

@@ -15,7 +15,7 @@ class MyUserManager(BaseUserManager):
             email=self.normalize_email(email),
             **extra_fields,
         )
-        user.subs_type = "REG"
+        user.subs_type = "BTEST"
         user.set_password(password)
         user.save(using=self._db)
         return user

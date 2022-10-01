@@ -15,8 +15,9 @@ app.conf.beat_schedule = {
         "schedule": crontab(minute="0", hour="*/1"),
     },
     # Каждую минуту проверяет нагрузку на ЦП, увеличивая время жизни кеша при большой нагрузке
-    "optimize_live_time_cache": {
-        "task": "service.tasks.optimize_live_time_cache",
+    # Так же высчитывает статистику если для некоторого пользователя слишком много кликов
+    "optimize_ttl_and_perfomance": {
+        "task": "service.optimize_ttl_and_perfomance",
         "schedule": crontab(),
     },
     # Отправка полной статистики в telegram администраторам
@@ -28,12 +29,6 @@ app.conf.beat_schedule = {
     "cleaner_db": {
         "task": "service.tasks.cleaner_db",
         "schedule": crontab(minute=30, hour=21),  # В 00:30 по Мск
-    },
-    # Оптимизируем обращение к панели(например юзер зайдет в первый раз а у него 1м+ записей и сайт подвиснет),
-    # модуль порционно записывает данные в фоновом процессе, только если их много
-    "optimize_panel":{
-        "task": "service.tasks.optimize_panel",
-        "schedule": crontab(minute="*/15"),  # В 00:30 по Мск
     },
 }
 app.conf.timezone = "UTC"

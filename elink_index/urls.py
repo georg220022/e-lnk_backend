@@ -17,7 +17,7 @@ urlpatterns = [
                 # "get": "fast_link",
                 "post": "create_link",
                 "delete": "delete_link",
-                "patch": "update_description",
+                "patch": "update_descrip_or_pass_lnk",
             }
         ),
     ),

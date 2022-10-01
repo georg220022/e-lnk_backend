@@ -12,6 +12,9 @@ from .send_mail import RegMail
 from .creator_stat_pdf import StatCreate
 from .write_stat import WriteStat
 from service.user_time_now import UserTime
+from service.cache_module import CacheModule
+from service.statistic_link import StatLink
+from collections import OrderedDict
 
 
 bot = Bot(token=TELEGRAM_TOKEN)
@@ -116,7 +119,7 @@ def cleaner_db() -> None:
 
 
 @app.task
-def optimize_live_time_cache() -> None:
+def optimize_ttl_and_perfomance() -> None:
     import psutil
 
     time_live = int(cache.get("live_cache"))
@@ -137,24 +140,83 @@ def optimize_live_time_cache() -> None:
             time_live -= 10
             cache.set("live_cache", time_live, None)
 
-def optimize_panel() -> None:
     keys = cache.keys("count_infolink_*")
     data_info_link_users = cache.get_many(keys)
-    user_list_id_over_infolink = [int(obj[0]) for obj in data_info_link_users.items() if int(obj[1]) >= 5000]
+    user_list_id_over_infolink = [
+        int(obj[15:]) for obj, values in data_info_link_users.items() if values >= 5000
+    ]
     if len(user_list_id_over_infolink) > 0:
         for user_id in user_list_id_over_infolink:
             user = User.objects.get(id=user_id)
-            queryset = InfoLink.objects.select_related("link_check").only("author_id").filter(link_check__author_id=user.id)
-            query_list = list(queryset.values())
-            context = {
-                "query_list": query_list,
-                "action": "get_full_stat",
-                "user_tz": user.my_timezone,
-                "queryset": queryset,
-                "optimize_panel": True,
-            }
-            StatSerializer(
-                LinkRegUser.objects.filter(author=user),
-                context=context,
-                many=True,
+            user_tz = user.my_timezone
+            obj_lnk_id = list(LinkRegUser.objects.filter(author=user).values("id"))
+            queryset = InfoLink.objects.select_related("link_check").filter(
+                link_check__author=user
             )
+            obj_lnk = list(queryset.values())
+            queryset.delete()
+            for key, ids in obj_lnk_id[0].items():
+                ids = int(ids)
+                data = [
+                    info_lnk for info_lnk in obj_lnk if info_lnk["link_check_id"] == ids
+                ]
+                device: Dict = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0}
+                countrys: Dict = {}
+                hour = {
+                    0: 0,
+                    1: 0,
+                    2: 0,
+                    3: 0,
+                    4: 0,
+                    5: 0,
+                    6: 0,
+                    7: 0,
+                    8: 0,
+                    9: 0,
+                    10: 0,
+                    11: 0,
+                    12: 0,
+                    13: 0,
+                    14: 0,
+                    15: 0,
+                    16: 0,
+                    17: 0,
+                    18: 0,
+                    19: 0,
+                    20: 0,
+                    21: 0,
+                    22: 0,
+                    23: 0,
+                }
+                for objs in data:
+                    device[objs["device_id"]] += 1
+                    if objs["country"] in countrys:
+                        countrys[objs["country"]] += 1
+                    else:
+                        countrys[objs["country"]] = 1
+                    tz_key = int(objs["date_check"].strftime("%H")) + int(user_tz)
+                    if tz_key in hour.keys():
+                        hour[tz_key] += 1
+                    else:
+                        if tz_key > 23:
+                            new_key = tz_key - 24
+                        else:
+                            new_key = 23 + tz_key
+                        hour[new_key] += 1
+                if cache.has_key(f"calculated_{user_id}_{ids}"):
+                    data_calculated_info = cache.get(f"calculated_{user_id}_{ids}")
+                    cache_hour = data_calculated_info[0]
+                    cache_device = data_calculated_info[1]
+                    cache_countrys = data_calculated_info[2]
+                    for nums in range(23):
+                        hour[nums] += cache_hour[nums]
+                    for nums in range(1, 8):
+                        device[nums] += cache_device[nums]
+                    for obj in cache_countrys:
+                        if obj in countrys:
+                            countrys[obj] += cache_countrys[obj]
+                        else:
+                            countrys[obj] = cache_countrys[obj]
+                data_calculated_info = [hour, device, countrys]
+                cache.set(f"calculated_{user_id}_{ids}", data_calculated_info, 180000)
+            cache.set(f"count_infolink_{user_id}", 0, 200000)

@@ -22,7 +22,11 @@ class PersonalStat(viewsets.ViewSet):
             else:
                 old_data = []
             return Response(old_data)
-        queryset = InfoLink.objects.select_related("link_check").only("author_id").filter(link_check__author_id=request.user)
+        queryset = (
+            InfoLink.objects.select_related("link_check")
+            .only("author_id")
+            .filter(link_check__author_id=request.user)
+        )
         query_list = list(queryset.values())
         context = {
             "query_list": query_list,
@@ -40,6 +44,8 @@ class PersonalStat(viewsets.ViewSet):
         cache.set(f"{request.user.id}", data, int(cache.get("live_cache")))
         if len(data) > 0:
             data[0].update({"ttl": cache.ttl(request.user.id)})
-        cache.set(f"count_infolink_{request.user.id}", 0, 200000) # Пользователь обращался к панели, значит у него нет не подсчитанных данных
+        cache.set(
+            f"count_infolink_{request.user.id}", 0, 200000
+        )  # Пользователь обращался к панели, значит у него нет не подсчитанных данных
         cache.incr("server_get_stat_in_serializer")
         return Response(data, status=status.HTTP_200_OK)

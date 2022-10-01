@@ -21,9 +21,6 @@ class StatSerializer(serializers.ModelSerializer):
         model_field=LinkRegUser()._meta.get_field("long_link")
     )
     linkName = serializers.SerializerMethodField("get_description")
-    # linkName = serializers.ModelField(
-    #    model_field=LinkRegUser()._meta.get_field("description")
-    # )
     linkLimit = serializers.ModelField(
         model_field=LinkRegUser()._meta.get_field("limited_link")
     )
@@ -126,17 +123,16 @@ class StatSerializer(serializers.ModelSerializer):
     def get_statistics(self, obj: LinkRegUser) -> dict:
         obj_lnk = self.context["query_list"]
         user_tz = self.context["user_tz"]
-        user_id = self.request.user.id
+        user_id = obj.author_id
         day_week = UserTime.day_week_now(user_tz, need_day_week=True)
         data = [info_lnk for info_lnk in obj_lnk if info_lnk["link_check_id"] == obj.id]
-        for info_lnk in obj_lnk:
-            if info_lnk["link_check_id"] == obj.id:
-                data.append(info_lnk)
         hour, device_id, countrys = StatLink.per_24_hour(data, user_tz)
         re_clicked_today, clicked_today = CacheModule.get_today_click_link(obj)
         keys_cache_info_link = cache.keys(f"statx_info_{obj.id}*")
         click_cache = list(
-            OrderedDict(cache.get_many(keys_cache_info_link)).values()                 # Получаем информацию о всех кликах в кеше (их не больше 1000, так как при достижении 1000 запией происходить запись в БД и лчистка данных из кеша)
+            OrderedDict(
+                cache.get_many(keys_cache_info_link)
+            ).values()  # Получаем информацию о всех кликах в кеше (их не больше 1000, так как при достижении 1000 запией происходить запись в БД и лчистка данных из кеша)
         )
         if len(click_cache) > 0:
             user_tz = int(
@@ -151,13 +147,16 @@ class StatSerializer(serializers.ModelSerializer):
             )
             hour, device_id, countrys = hour_cache, device_cache, countrys_cache
         if cache.has_key(f"calculated_{user_id}_{obj.id}"):
-            hour, device_id, countrys = CacheModule.get_save_and_remove_infolink(obj, hour, device_id, countrys)
-        data_calculated_info = [hour, device, countrys]
+            hour, device_id, countrys = CacheModule.get_save_and_remove_infolink(
+                obj, hour, device_id, countrys
+            )
+        data_calculated_info = [hour, device_id, countrys]
         cache.set(f"calculated_{user_id}_{obj.id}", data_calculated_info, 180000)
         cache.delete_many(keys_cache_info_link)
+        if self.context["optimize_panel"]:
+            return "ok"
         if len(obj_lnk) > 0:
-            if self.context["action"] == "get_full_stat":
-                self.context["queryset"].delete()
+            self.context["queryset"].delete()
         data_obj = {
             "country": countrys,
             "device": device_id,
@@ -196,7 +195,9 @@ class StatSerializer(serializers.ModelSerializer):
                 data_obj["country"] = {"Страны": 0}
             # если список стран больше 9, тогда собираем самые мелкие в категорию <<Другие>>
             elif len(data_obj["country"]) >= 10:
-                sorted_country = sorted(data_obj["country"].items(), key=lambda item: item[1])
+                sorted_country = sorted(
+                    data_obj["country"].items(), key=lambda item: item[1]
+                )
                 list_country = sorted_country[:-10:-1]
                 ready_country = {"Другие": sum(list(zip(*sorted_country[:-10]))[1])}
                 for obj in list_country:
@@ -212,8 +213,9 @@ class StatSerializer(serializers.ModelSerializer):
                 "other": device_id[7],
             }
             data_obj["clicks"] = clicked
-        if not self.context["optimize_panel"]:
-            return data_obj
+        if self.context["optimize_panel"]:
+            return True
+        return data_obj
 
     def get_lock(self, obj):
         if len(obj.secure_link) > 0:

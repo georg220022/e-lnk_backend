@@ -10,7 +10,7 @@ from rest_framework.decorators import api_view, throttle_classes, permission_cla
 from service.read_write_base import RedisLink, PostgresLink
 from service.stat_get import StatisticGet
 from elink.settings import TIME_SAVE_COOKIE
-from elink_index.validators import CheckLink
+from service.validators import CheckLink
 
 from .throttle import PassAnonymousThrottle, PassLinkUserThrottle
 
@@ -24,8 +24,11 @@ def open_link(request: HttpRequest, short_code: str) -> Response:
             return redirect(object_redis["long_link"])
         object_postgres = PostgresLink.reader(short_code)
         if object_postgres is not False:
-            if not CheckLink.check_date_link(object_postgres):
-                return redirect("https://e-lnk.ru/badtime")
+            time_lnk = CheckLink.check_date_link(object_postgres)
+            if time_lnk:
+                if time_lnk == "bad_date_end":
+                    return redirect("https://e-lnk.ru/bad_date_end")
+                return redirect("https://e-lnk.ru/bad_date_start")
             if not CheckLink.check_pass(object_postgres):
                 data = {
                     "short_code": object_postgres.short_code,

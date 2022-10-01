@@ -40,9 +40,9 @@ class LinkRegUser(models.Model):
     again_how_many_clicked = models.IntegerField(
         default=0, verbose_name="Повторных переходов"
     )
-    # Разрешить просмотр полной статистики всем людям
+    # Разрешить просмотр полной статистики всем людям !!!UPD будет доступно в след обновах
     public_stat_full = models.BooleanField(default=False, null=True)
-    # Показывать ограниченную статистику всем людям
+    # Показывать ограниченную статистику всем людям !!!UPD будет доступно в след обновах
     public_stat_small = models.BooleanField(default=False, null=True)
     qr = models.TextField(null=True, verbose_name="QR код")
 

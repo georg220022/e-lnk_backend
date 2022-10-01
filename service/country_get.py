@@ -12,7 +12,6 @@ reader = geoip2.database.Reader(f"{BASE_DIR}/data.mmdb")
 
 class DetectCountry:
     def get_client_ip(request: HttpRequest) -> str:
-        # print(request.META.get('HTTP_X_FORWARDED_FOR'))
         ip = request.META.get("HTTP_REAL_IP")
         if not ip:
             ip = request.META.get("HTTP_X_FORWARDED_FOR")
@@ -21,9 +20,7 @@ class DetectCountry:
             return obj
         try:
             response = reader.country(ip)
-            data_country = (
-                response.country.names
-            )
+            data_country = response.country.names
             obj = data_country.get("ru", "Нет русского перевода страны")
         except ValueError:
             cache.incr("server_unknown_coutry")

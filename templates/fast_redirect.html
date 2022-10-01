@@ -1,12 +1,13 @@
 <html>
 <head>
 <script>
+// Здесь можно передать твою переменную
 var text = {{short_link}};
+// Выполняем копирование переменной при загрузке с помощью Async Clipboard Api
 navigator.clipboard.writeText(text).then(function() {
-    <meta http-equiv="refresh" content="0;URL={{long_link}}"/>
+  console.log('Текст скопирован успешно'); // Если скопировалось выводим в консоль 
 }, function(err) {
-  <h1>Ошибка</h1>
-  console.error('Произошла ошибка : ', err);
+  console.error('Произошла ошибка : ', err); // Если ошибка выводит ошибку в консоль
 });
 </script>
 </head>

@@ -9,9 +9,6 @@ class StatCreate:
     """Запись данных в pdf файл"""
 
     def every_day_stat(usr) -> None:
-        
-        #queryset = InfoLink.objects.select_related("link_check").only("author_id").filter(link_check__author_id=int(usr[3]))
-        #query_list = list(queryset.values())
         query_list = list(
             InfoLink.objects.select_related("link_check")
             .only("author_id")

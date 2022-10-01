@@ -5,6 +5,7 @@ from .views import (
     ChangePasswordView,
     CustomRefresh,
     ActivateAccount,
+    UserSettingsAPIView,
 )
 
 app_name = "authentication"
@@ -18,5 +19,15 @@ urlpatterns = [
     path(
         "/activate/<int:id>/<str:activation_code>",
         ActivateAccount.as_view({"get": "get_activation"}),
+    ),
+    path(
+        "/settings",
+        UserSettingsAPIView.as_view(
+            {
+                "patch": "get_cahnge_settings",
+                "delete": "get_delete_acc",
+                "get": "get_settings",
+            }
+        ),
     ),
 ]

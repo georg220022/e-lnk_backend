@@ -25,7 +25,9 @@ class WriteStat:
         InfoLink.objects.bulk_create(
             [*OrderedDict(cache.get_many(keys_cache_info_link)).values()]
         )
-        cache.delete_many(keys_cache_info_link)  # Из за отправки статистики по повторным нажатиям, перенести эту хуету на 00-00 очистку
+        cache.delete_many(
+            keys_cache_info_link
+        )  # Из за отправки статистики по повторным нажатиям, перенести эту хуету на 00-00 очистку
         cache.set("count_cache_infolink", 0, None)  # Эту строку в самый низ
 
     @staticmethod

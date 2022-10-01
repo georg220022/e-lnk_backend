@@ -4,7 +4,7 @@ from typing import Dict
 class StatLink:
     def per_24_hour(data, user_tz):
         """Соберем статистику за текущие 24 часа"""
-        device: Dict = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0}
+        device = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0}
         countrys: Dict = {}
         hour = {
             0: 0,
@@ -32,7 +32,6 @@ class StatLink:
             22: 0,
             23: 0,
         }
-
         for objs in data:
             device[objs["device_id"]] += 1
             if objs["country"] in countrys:

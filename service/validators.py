@@ -1,7 +1,6 @@
+import datetime
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
-from service.server_stat import ServerStat
-from datetime import datetime
 from .models import LinkRegUser
 from typing import Dict, Union
 from django.http import HttpRequest
@@ -10,9 +9,9 @@ from elink_index.models import LinkRegUser
 
 
 class CheckLink:
-    @staticmethod  # Класс метод под вопросом
+    @staticmethod
     def get_long_url(request_data: Dict, fast_link=False) -> Union[bool, str]:
-        """Проверка максимальной длинны ссылки"""
+        """Проверка максимальной длинны ссылки для postgres'a и redis'a"""
         long_link = request_data.get("longLink", False)
         if long_link and len(long_link) < 5001:
             if "https://" == long_link[0:8] or "http://" == long_link[0:7]:
@@ -52,40 +51,21 @@ class CheckLink:
 
     @staticmethod
     def check_date_link(obj: LinkRegUser) -> bool:
-        """Проверка ограничина ли дата использования ссылки"""
-        now = timezone.now()
         start = obj.start_link
         stop = obj.date_stop
-        if (isinstance(start, datetime) and start > now) or (
-            isinstance(stop, datetime) and stop > now
-        ):
-            cache.incr("server_open_bad_time")
-            return False
-        return True
+        if not (start or stop) == "":
+            now = timezone.now()  # datetime.datetime.now(datetime.timezone.utc)
+            """Проверка ограничина ли дата использования ссылки"""
+            if isinstance(start, datetime.datetime) and bool(start > now):
+                cache.incr("server_open_bad_time")
+                return "bad_date_start"
+            if isinstance(stop, datetime.datetime):
+                if stop < now:
+                    cache.incr("server_open_bad_time")
+                    return "bad_date_end"
+        return False
 
-    @staticmethod
-    def check_request(obj: LinkRegUser) -> Union[bool, dict]:
-        """Проверка запроса на наличие 2-х важных параметров"""
-        try:
-            len_code = len(str(obj["shortCode"]))
-            len_pass = len(str(obj["linkPassword"]))
-            if (len_code and len_pass) < 17 and (len_code and len_pass) > 0:
-                data = {
-                    "shortCode": str(obj["shortCode"]),
-                    "linkPassword": str(obj["linkPassword"]),
-                }
-                return data
-            return False
-        except KeyError as e:
-            ServerStat.reported(
-                "CheckLink_79",
-                "Не получен один из требуемых объектов"
-                + f" obj={obj}, текст ошибки: {e}",
-            )
-            cache.incr("server_bad_data")
-            return False
-
-    def description(request_obj: HttpRequest) -> Union[bool, LinkRegUser]:
+    def description_or_pass(request_obj: HttpRequest) -> Union[bool, LinkRegUser]:
         """Проверка прав редактирования описания ссылки"""
         obj_id = request_obj.data.get("shortLink", False)
         if obj_id:

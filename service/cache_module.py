@@ -151,17 +151,17 @@ class CacheModule:
         if not isinstance(clicked_today, int):
             clicked_today = 0
         return re_clicked_today, clicked_today
-    
+
     @staticmethod
     def get_save_and_remove_infolink(obj, hour, device_id, countrys):
-        data_calculated_info = cache.get(f"calculated_{obj.id}")
-        cache_hour = data_calculated_info["hour"]
-        cache_device = data_calculated_info["device"]
-        cache_countrys = data_calculated_info["countrys"]
+        data_calculated_info = cache.get(f"calculated_{obj.author_id}_{obj.id}")
+        cache_hour = data_calculated_info[0]
+        cache_device = data_calculated_info[1]
+        cache_countrys = data_calculated_info[2]
         for nums in range(23):
-            hour[nums] += cache_hour[nums] 
-        for nums in range(1, 7):
-            device_id[nums] += cache_device
+            hour[nums] += int(cache_hour[nums])
+        for nums in range(1, 8):
+            device_id[nums] += cache_device[nums]
         for obj in cache_countrys:
             if obj in countrys:
                 countrys[obj] += cache_countrys[obj]

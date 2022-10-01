@@ -17,7 +17,11 @@ from service.generator_code import GeneratorCode as GeneratorId
 from .models import User
 from service.server_stat import ServerStat
 from django.core.cache import cache
-from .serializers import RegistrationSerializer, ChangePasswordSerializer
+from .serializers import (
+    RegistrationSerializer,
+    ChangePasswordSerializer,
+    ChangeSettingsSerializer,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -36,17 +40,7 @@ class CustomRefresh(viewsets.ViewSet, BlacklistMixin):
         old_token = request.COOKIES.get("refresh", False)
         if old_token:
             if isinstance(old_token, str):
-                # try:
-                RefreshToken(old_token)#.blacklist()
-                # except Exception as e:
-                #    ServerStat.reported(
-                #        "CustomRefresh_42", f"Не удалось выдать новый токен {e}"
-                #    )
-                #    logger.warning(
-                #        f"Старый токен: {old_token}, Request: {request}, Self: {self}"
-                #    )
-                #    cache.incr("server_bad_try_update_refresh")
-                #    return Response(err_data, status=status.HTTP_401_UNAUTHORIZED)
+                RefreshToken(old_token)
                 old_token = old_token[old_token.find(".") + 1 : old_token.rfind(".")]
                 base64_message = old_token
                 base64_bytes = base64_message.encode("ascii")
@@ -229,3 +223,47 @@ class ActivateAccount(viewsets.ViewSet):
                         return response
         cache.incr("server_bad_try_activated")
         return redirect("https://e-lnk.ru/404")
+
+
+class UserSettingsAPIView(viewsets.ViewSet):
+    def get_permissions(self):
+        return (permissions.IsAuthenticated(),)
+
+    def get_cahnge_settings(self, request: HttpRequest) -> Response:
+        context = {"user_id": request.user.id}
+        serializer = ChangeSettingsSerializer(data=request.data, context=context)
+        if serializer.is_valid():
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        msg = {"error": serializer.errors}
+        return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+
+    def get_delete_acc(self, request: HttpRequest) -> Response:
+        user = User.objects.get(id=request.user.id)
+        user_pass = request.data.get("password", False)
+        if isinstance(user_pass, str):
+            if user.check_password(user_pass):
+                user.delete()
+                cache.delete_pattern(f"calculated_{user.id}*")
+                cache.delete_pattern(f"statx_aclick_{user.id}*")
+                cache.delete_pattern(f"statx_click_{user.id}*")
+                cache.delete_pattern(f"count_infolink_{user.id}*")
+                cache.delete_pattern(f"calculated_{user.id}*")
+                response = Response
+                response.delete_cookie("refresh")
+                response.status_code(status.HTTP_200_OK)
+                return response
+            else:
+                msg = "Пароль не верный"
+        else:
+            msg = "Пароль должен быть строкой"
+        return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+
+    def get_settings(self, request: HttpRequest) -> Response:
+        user = User.objects.get(id=request.user.id)
+        obj = {
+            "utc": user.my_timezone,
+            "email": user.email,
+            "sendStat": user.send_stat_email,
+        }
+        data = json.dumps(obj)
+        return Response(data, status=status.HTTP_200_OK)
