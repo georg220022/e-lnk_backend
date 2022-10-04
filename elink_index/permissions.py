@@ -2,6 +2,7 @@ from rest_framework import permissions
 
 
 class Permissons:
+    # Выбираем permissons
     @staticmethod
     def choices_methods(obj_self_action: str) -> permissions:
         if obj_self_action == "create_link" or obj_self_action == "open_link_pass":

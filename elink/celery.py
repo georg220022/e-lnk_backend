@@ -17,7 +17,7 @@ app.conf.beat_schedule = {
     # Каждую минуту проверяет нагрузку на ЦП, увеличивая время жизни кеша при большой нагрузке
     # Так же высчитывает статистику если для некоторого пользователя слишком много кликов
     "optimize_ttl_and_perfomance": {
-        "task": "service.optimize_ttl_and_perfomance",
+        "task": "service.tasks.optimize_ttl_and_perfomance",
         "schedule": crontab(),
     },
     # Отправка полной статистики в telegram администраторам

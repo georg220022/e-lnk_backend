@@ -1,11 +1,14 @@
 import datetime
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
-from .models import LinkRegUser
+from elink_index.models import LinkRegUser
 from typing import Dict, Union
 from django.http import HttpRequest
 from django.core.cache import cache
 from elink_index.models import LinkRegUser
+from users.models import User
+from rest_framework.response import Response
+from rest_framework import status
 
 
 class CheckLink:
@@ -78,3 +81,55 @@ class CheckLink:
                 return link_obj
         cache.incr("server_bad_edit_descrip")
         return False
+
+class CheckSettings:
+    
+    @staticmethod
+    def validate(user_id, obj):
+        user = User.objects.get(id=user_id)
+        data = {
+            "id": user_id,
+        }
+        old_pass = obj.pop("password", False)
+        if old_pass:
+            if not user.check_password(str(old_pass)):
+                msg = "Пароль не верный! Настройки не были изменены."
+                return msg
+        else:
+            msg = {"error": "Введите ваш текущий пароль что бы внести изменения"}
+            return msg
+        utc = obj.pop("utc", False)
+        if utc:
+            if isinstance(utc, int):
+                if utc != user.my_timezone:
+                    if utc < 12 and utc > -12:
+                        data["my_timezone"] = utc
+                    else:
+                        msg = "масильное смещение по UTC от -12 до +12"
+                        return msg
+                else:
+                    msg = "Это ваше текущее время UTC, введите другое смещение либо оставьте поле пустым. Настройки не изменились"
+                    return msg
+            else:
+                msg = "UTC должно быть числом"
+                return msg
+        send_stat = obj.pop("sendStat", "None")
+        if isinstance(send_stat, bool):
+            if user.subs_type != "REG":
+                data["send_stat_email"] = send_stat
+            else:
+                msg = "Ваш тип подписки не позволяет получать PDF файл статистики на почту"
+                return msg
+        new_pass = obj.pop("newPass", False)
+        if new_pass:
+            if len(new_pass) > 7 and len(new_pass) < 17:
+                if isinstance(utc, str):
+                    user.set_password(new_pass)
+                else:
+                    msg = "Пароль должен быть строкой"
+                    return msg
+            else:
+                msg = "Минимальная длинна пароля 8, максимальная 16 симолов"
+                return msg
+        return data
+        

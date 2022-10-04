@@ -1,4 +1,4 @@
-from xml.dom import ValidationErr
+from service.send_mail import RegMail
 from rest_framework import serializers
 from .models import User
 from service.generator_code import GeneratorCode as GeneratorId
@@ -21,68 +21,83 @@ class RegistrationSerializer(serializers.ModelSerializer):
         user.save()
         return user
 
-
-class ChangeSettingsSerializer(serializers.Serializer):
-    model = User
-    fields = (
-        "utc",
-        "email",
-        "send_stat",
+CHOICES_TIME_ZONE = (
+        ("-12", "-12"),
+        ("-11", "-11"),
+        ("-10", "-10"),
+        ("-9", "-9"),
+        ("-8", "-8"),
+        ("-7", "-7"),
+        ("-6", "-6"),
+        ("-5", "-5"),
+        ("-4", "-4"),
+        ("-3", "-3"),
+        ("-2", "-2"),
+        ("-1", "-1"),
+        ("+0", "+0"),
+        ("+1", "+1"),
+        ("+2", "+2"),
+        ("+3", "+3"),
+        ("+4", "+4"),
+        ("+5", "+5"),
+        ("+6", "+6"),
+        ("+7", "+7"),
+        ("+8", "+8"),
+        ("+9", "+9"),
+        ("+10", "+10"),
+        ("+11", "+11"),
+        ("+12", "+12"),
     )
 
-    def validate(self, obj):
+class ChangeSettingsSerializer(serializers.Serializer):
+    utc = serializers.ChoiceField(choices=CHOICES_TIME_ZONE, required=False)
+    sendStat = serializers.BooleanField(required=False)
+    email = serializers.EmailField(required=False)
+    password = serializers.CharField()
+    new_password = serializers.CharField(required=False)
+    
+    class Meta:
+        model = User
+        read_only_fields = ["id"]
+        fields = (
+            "send_stat_email",
+            "password",
+            "new_password",
+            "id",
+            "my_timezone",
+            "utc",
+            "email",
+            "sendStat",
+        )
 
-        user_id = self.context["user_id"]
-        user = User.objects.get(id=user_id)
-        data = {
-            "id": user_id,
-            "usr_obj": user,
-        }
-        old_pass = obj.pop("password", False)
-        if old_pass:
-            if not user.check_password(str(old_pass)):
-                msg = "Пароль не верный! Настройки не были изменены."
-                raise ValidationErr(msg)
-        else:
-            msg = "Введите ваш текущий пароль что бы внести изменения"
-            raise ValidationErr(msg)
-        utc = obj.pop("utc", False)
-        if utc:
-            if isinstance(utc, int):
-                if utc != user.my_timezone:
-                    if utc < 12 and utc > -12:
-                        data["my_timezone"] = utc
+    def update(self, instance, validated_data):
+        psswd = validated_data.pop("password", False)
+        if psswd:
+            if instance.check_password(psswd):
+                timezone = validated_data.get("utc", False)
+                if timezone:
+                    instance.my_timezone = str(timezone)
+                instance.send_stat_email = validated_data.get("sendStat", instance.send_stat_email)
+                new_pass = validated_data.get("new_password", False)
+                if new_pass:
+                    instance.set_password(new_pass)
+                    instance.public_key = str(instance.id) + str(GeneratorId.public_id())
+                emails = validated_data.get("email", False)
+                if emails:
+                    if instance.email != emails:
+                        if not User.objects.filter(email=emails).exists():
+                            RegMail.change_mail.delay(instance.email, emails, None, True)
+                            instance.email = emails
+                            instance.is_active = False
+                        else:
+                            msg = "Данная почта уже зарегестрирована"
+                            raise serializers.ValidationError(msg)
                     else:
-                        msg = "масильное смещение по UTC от -12 до +12"
-                        raise ValidationErr(msg)
-                else:
-                    msg = "Это ваше текущее время UTC, введите другое смещение либо оставьте поле пустым. Настройки не изменились"
-                    raise ValidationErr(msg)
-            else:
-                msg = "UTC должно быть числом"
-                raise ValidationErr(msg)
-        send_stat = obj.pop("sendStat", "None")
-        if isinstance(send_stat, bool):
-            if user.subs_type != "REG":
-                data["send_stat_email"] = send_stat
-            else:
-                msg = "Ваш тип подписки не позволяет получать PDF файл статистики на почту"
-                raise ValidationErr(msg)
-        new_pass = obj.pop("newPass", False)
-        if new_pass:
-            if len(new_pass) > 7 and len(new_pass) < 17:
-                if isinstance(utc, str):
-                    user.set_password(new_pass)
-                else:
-                    msg = "Пароль должен быть строкой"
-                    raise ValidationErr(msg)
-            else:
-                msg = "Минимальная длинна пароля 8, максимальная 16 симолов"
-                raise ValidationErr(msg)
-        return data
+                        msg = "Это и так ваша текущая почта"
+                        raise serializers.ValidationError(msg)
+                    instance.save()
+                    return instance
 
-    def update(self, data):
-        usr_obj = data["usr_obj"]
-        data["public_key"] = str(usr_obj.id) + str(GeneratorId.public_id())
-        usr_obj.update(**data)
-        return usr_obj.save()
+                
+        msg = "Пароль не верный! Настройки не были изменены."
+        raise serializers.ValidationError(msg)

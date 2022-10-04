@@ -22,6 +22,7 @@ class RegistrationAnonymousThrottle(AnonRateThrottle):
 
 
 class Throttle_create_link:
+    """Выбор рейтов тротлинга"""
     @staticmethod
     def choices_methods(obj_self_action: str) -> list:
         if obj_self_action == "create_link":

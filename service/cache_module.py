@@ -10,6 +10,16 @@ class CacheModule:
         """Модуль записи свежей информации в кеш для пользователя"""
         old_data = cache.get(user_id)
         if old_data:
+            name_lnk = serializer_data.get("linkName", False)
+            if isinstance(name_lnk, str):
+                if len(name_lnk) == 0:
+                    bad_word = ["https://www.", "http://www.", "https://", "http://", "wwww."]
+                    obj_long_lnk = serializer_data.get("longLink")
+                    for objs in bad_word:
+                        len_objs = len(objs)
+                        if objs == obj_long_lnk[0:len_objs]:
+                            name_lnk = obj_long_lnk[len(objs):]
+                            break
             lnk_id = serializer_data.get("linkId")
             stop_date = serializer_data.get("linkEndDate")
             if isinstance(stop_date, type(None)):
@@ -21,6 +31,8 @@ class CacheModule:
             if not isinstance(clicked_today, int):
                 clicked_today = 0
             fake_data = serializer_data
+            if name_lnk:
+                fake_data["linkName"] = name_lnk
             start = fake_data.get("linkStartDate")
             create = fake_data.get("linkCreatedDate")
             formated_time = create.strftime("%Y-%m-%dT%H:%M")
@@ -75,7 +87,7 @@ class CacheModule:
 
     @staticmethod
     def editor(
-        user_id: int, link: OrderedDict, description: str, passwd: bool | str
+        user_id: int, link: OrderedDict, description=False, passwd=False
     ) -> None:
         """Модуль редактирования информации в кеше (отображаемый пароль и имя ссылки в панели)"""
         old_data = cache.get(user_id)
@@ -83,13 +95,24 @@ class CacheModule:
             for obj in old_data:
                 short_code = obj["shortLink"][9:]
                 if short_code == link.short_code:
-                    obj["linkName"] = description
-                    if passwd:
-                        obj["lock"] = True
-                        obj["linkPassword"] = passwd
-                    else:
-                        obj["lock"] = False
-                        obj["linkPassword"] = ""
+                    if isinstance(description, str):
+                        if description:
+                            obj["linkName"] = description
+                        else:
+                            bad_word = ["https://www.", "http://www.", "https://", "http://", "wwww."]
+                            obj_long_lnk = obj["longLink"]
+                            for objs in bad_word:
+                                len_objs = len(objs)
+                                if objs == obj_long_lnk[0:len_objs]:
+                                    obj["linkName"] = obj_long_lnk[len(objs):]
+                                    break
+                    if isinstance(passwd, str):
+                        if passwd:
+                            obj["lock"] = True
+                            obj["linkPassword"] = passwd
+                        else:
+                            obj["lock"] = False
+                            obj["linkPassword"] = ""
             timer = int(cache.ttl(user_id))
             cache.set(user_id, old_data, timer)
 

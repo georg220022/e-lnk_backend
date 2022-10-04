@@ -14,7 +14,7 @@ urlpatterns = [
         "/links",
         PostlinkViewset.as_view(
             {
-                # "get": "fast_link",
+                "get": "fast_link",
                 "post": "create_link",
                 "delete": "delete_link",
                 "patch": "update_descrip_or_pass_lnk",

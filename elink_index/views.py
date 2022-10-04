@@ -146,7 +146,7 @@ class FastlinkViewset(viewsets.ViewSet):
         return Permissons.choices_methods(self.action)
 
     def create_link(self, request: HttpRequest, site: str) -> Response:
-        """Создание быстрой ссылки через 'ee' ali, ozon, wildberries"""
+        """Создание быстрой ссылки через 'ee' на ali, ozon, wildberries"""
         long_code = request.META.get("HTTP_MY_URL", False)
         if long_code and len(long_code) < 5001:
             long_link = "https://" + site + ".ru" + long_code
@@ -156,5 +156,5 @@ class FastlinkViewset(viewsets.ViewSet):
             return render(request, "fast_redirect.html", context=context)
         return redirect("https://e-lnk.ru/404")
 
-    def handler404(request, exception):
-        return render(request, "email.html")
+    #def handler404(request, exception):
+    #    return render(request, "email.html")

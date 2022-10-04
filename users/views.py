@@ -12,6 +12,7 @@ from rest_framework.views import APIView
 from django.shortcuts import redirect
 from django.shortcuts import get_object_or_404
 from elink.settings import REDIS_FOR_ACTIVATE
+from service.cache_module import CacheModule
 from service.send_mail import RegMail
 from service.generator_code import GeneratorCode as GeneratorId
 from .models import User
@@ -136,7 +137,7 @@ class RegistrationAPIView(APIView):
                     httponly=True,
                 )
                 data.set_cookie("registration_elink", max_age=2592000)
-                RegMail.send_code(user_instance)
+                RegMail.send_code.delay(user_instance)
                 cache.incr("server_new_users")
                 return data
         if serializer.errors.get("email", False):
@@ -177,7 +178,6 @@ class EntersOnSite(viewsets.ViewSet):
                     data = {
                         "email": user.email,
                         "access": str(refresh.access_token),
-                        # "refresh": str(refresh)
                     }
                     new_resp = Response(data, status=status.HTTP_200_OK)
                     new_resp.set_cookie(
@@ -189,14 +189,13 @@ class EntersOnSite(viewsets.ViewSet):
                     )
                     cache.incr("server_good_enter")
                     return new_resp
-                else:
-                    msg = "Не верный пароль"
             else:
-                msg = "Не верный емейл или пароль"
-        msg = "Неудалось войти, код ошибки #usvi202"
-        err = {"error": msg}
+                cache.incr("server_bad_enter")
+                msg = {"error": "Не верный емейл или пароль"}
+                return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+        msg = {"error": "Неудалось войти, код ошибки #usvi_199"}
         cache.incr("server_bad_enter")
-        return Response(err, status=status.HTTP_400_BAD_REQUEST)
+        return Response(msg, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ActivateAccount(viewsets.ViewSet):
@@ -225,17 +224,22 @@ class ActivateAccount(viewsets.ViewSet):
         return redirect("https://e-lnk.ru/404")
 
 
-class UserSettingsAPIView(viewsets.ViewSet):
+class UserSettings(viewsets.ViewSet):
     def get_permissions(self):
         return (permissions.IsAuthenticated(),)
 
     def get_cahnge_settings(self, request: HttpRequest) -> Response:
-        context = {"user_id": request.user.id}
-        serializer = ChangeSettingsSerializer(data=request.data, context=context)
-        if serializer.is_valid():
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        msg = {"error": serializer.errors}
-        return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+        instance = User.objects.get(id=request.user.id)
+        serializer = ChangeSettingsSerializer(data=request.data, instance=instance, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        if "email" in request.data:
+            RegMail.change_mail.delay(None, serializer.data.get("email", "help@e-lnk.ru"), instance.id)
+        if "utc" in request.data:
+            CacheModule.remove_stat_link(instance.id)
+        data = Response(status=status.HTTP_200_OK)
+        data.set_cookie("registration_elink", max_age=2592000)
+        return data
 
     def get_delete_acc(self, request: HttpRequest) -> Response:
         user = User.objects.get(id=request.user.id)
@@ -243,13 +247,9 @@ class UserSettingsAPIView(viewsets.ViewSet):
         if isinstance(user_pass, str):
             if user.check_password(user_pass):
                 user.delete()
-                cache.delete_pattern(f"calculated_{user.id}*")
-                cache.delete_pattern(f"statx_aclick_{user.id}*")
-                cache.delete_pattern(f"statx_click_{user.id}*")
-                cache.delete_pattern(f"count_infolink_{user.id}*")
-                cache.delete_pattern(f"calculated_{user.id}*")
+                CacheModule.remove_stat_link(user.id)
                 response = Response
-                response.delete_cookie("refresh")
+                response.delete_cookie()
                 response.status_code(status.HTTP_200_OK)
                 return response
             else:
@@ -267,3 +267,38 @@ class UserSettingsAPIView(viewsets.ViewSet):
         }
         data = json.dumps(obj)
         return Response(data, status=status.HTTP_200_OK)
+
+class ResetUserInfo(viewsets.ViewSet):
+    def get_permissions(self):
+        return (permissions.AllowAny(),)
+    
+    def send_code_reset_pass(self, request):
+        emails = request.data.get("email", False)
+        if emails:
+            if not cache.has_key(f"wait_{emails}"):                          
+                if User.objects.filter(email=emails).exists():
+                    cache.set(f"wait_{emails}", "ok", 300)
+                    reset_pass_key = GeneratorId.reset_pass_key()
+                    cache.set(f"reset_pass_{emails}", reset_pass_key, 86400)
+                    RegMail.change_pass(emails, reset_pass_key)
+                    return Response(status=status.HTTP_200_OK)
+                msg = {"error": "Почты не существует на сервисе"}
+                return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+            msg = {"error": "Запрос восстановления пароля не чаще 1 раза в 5 минут"}
+            return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+        msg = {"error": "Поле email обязательно"}
+        return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+
+    def reset_pass(self, request, email=False, reset_code=False):
+        if email and reset_code:
+            if cache.has_key(f"reset_pass_{email}"):
+                original_code = cache.get(f"reset_pass_{email}")
+                if original_code == reset_code:
+                    user = get_object_or_404(User, email=email)
+                    new_pass = GeneratorId.public_id()
+                    user.set_password(new_pass)
+                    user.save()
+                    cache.delete(f"reset_pass_{email}")
+                    RegMail.change_pass(email, False, new_pass)
+                    return redirect("https://e-lnk.ru/pass_reset")
+        return redirect("https://e-lnk.ru/404")

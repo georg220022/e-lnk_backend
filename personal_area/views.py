@@ -28,11 +28,13 @@ class PersonalStat(viewsets.ViewSet):
             .filter(link_check__author_id=request.user)
         )
         query_list = list(queryset.values())
+        delete_id = [obj["id"] for obj in query_list]
         context = {
             "query_list": query_list,
             "action": self.action,
             "user_tz": request.user.my_timezone,
-            "queryset": queryset,
+            #"queryset": queryset,
+            #"delete_id": delete_id,
             "optimize_panel": False,
         }
         serializer = StatSerializer(

@@ -94,7 +94,8 @@ class LinkAuthSerializer(serializers.ModelSerializer):
         data["long_link"] = self.context["long_link"]
         return data
 
-    def create(self, validated_data):
+    def create(self, validated_data: dict) -> dict:
+        """Создаем QR и запись в БД"""
         short_link = SITE_NAME + validated_data["short_code"]
         qr = QrGenerator.qr_base64(short_link)
         try:

@@ -1,0 +1,147 @@
+<!DOCTYPE html
+	PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<title>Сброс пароля E-lnk</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet"> 
+	<style>
+		body {
+			width: 100% !important;
+			-webkit-text-size-adjust: 100%;
+			-ms-text-size-adjust: 100%;
+			margin: 0;
+			padding: 0;
+			line-height: 100%;
+			overflow-x: hidden;
+		}
+		
+		[style*="Roboto"] {font-family: 'Roboto', sans-serif !important;}
+		
+		img {
+			outline: none;
+			text-decoration: none;
+			border:none;
+			-ms-interpolation-mode: bicubic;
+			max-width: 100%!important;
+			margin: 0;
+			padding: 0;
+			display: block;
+		}
+		table td {
+			border-collapse: collapse;
+		}
+		table {
+			border-collapse: collapse;
+			mso-table-lspace: 0pt;
+			mso-table-rspace: 0pt;
+		}
+		.header-td {
+			padding-top: 30px;
+		}
+		.body-td {
+			padding-top: 20px;
+			padding-bottom: 20px;
+		}
+		.body-td p {
+			font-size: 20px;
+			font-weight: 400;
+			line-height: 22px;
+		}
+    .qr {
+      display: block !important;
+      margin: 0 auto !important;
+      text-align: center !important;
+      width: 160px !important;
+      margin-bottom: 20px !important;
+    }
+    .qr img {
+      margin: 0 auto !important;
+    }		
+		@media (max-width: 870px) {
+			.table-850 {
+				width: 600px !important;
+			}
+			.table-600 {
+				width: 550px !important;
+			}
+		}
+		@media (max-width: 620px) {
+			.table-850 {
+				width: 400px !important;
+			}
+			.table-600 {
+				width: 320px !important;
+			}
+			.logo {
+				display: block !important;
+				margin: 0 auto !important;
+				text-align: center !important;
+				width: 200px !important;
+				margin-bottom: 20px !important;
+			}
+			.logo img {
+				margin: 0 auto !important;
+			}
+		}
+		@media (max-width: 420px) {
+			.table-850 {
+				width: 300px !important;
+			}
+			.table-600 {
+				width: 260px !important;
+			}
+		}
+	</style>
+</head>
+
+<body style="margin: 0; padding: 20px;">
+	<table class="main table-850" cellpadding="0" cellspacing="0" width="850" align="center">
+		<tr>
+			<td width="850"></td>
+		</tr>
+		<tr>
+			<td bgcolor="#ffffff" class="header-td">
+				<table class="table-850" cellpadding="0" cellspacing="0" align="left">
+					<tr>
+						<td align="left" class="logo">
+							<div style="font-size:42px;color:#3d96e5;font-family: 'Roboto';font-weight: 500;">E-lnk</div>
+						</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+		<tr>
+			<td class="body-td" bgcolor="#ffffff">
+				<table class="table-850" cellpadding="0" cellspacing="0" width="850" align="center">
+					<tr>
+						<br>
+						{% if reset_link %}
+                            <p style="font-size:20px;font-family: 'Roboto';font-weight: 400;">Для вашего аккаунта e-lnk запрошен сброс пароля, если запрос делали не Вы, проигнорируйте это сообщение.</p>
+                            <br>
+							<p style="font-size:20px;font-family: 'Roboto';font-weight: 400;">Если пароль восстанавливаете Вы, перейдите по ссылке ниже. Новый пароль будет сгенерирован и выслан Вам на этот адрес.</p>
+							<a href="{{ reset_link }}" class="link" style="font-size:18px;font-family: 'Roboto';font-weight: 500;color:#3d96e5;">ВЫСЛАТЬ НОВЫЙ ПАРОЛЬ</a>
+							<br>
+							<p style="font-size:20px;font-family: 'Roboto';font-weight: 400;">Обращаем Ваше внимание, что активировать учетную запись можно только с того устройства и браузера, через которые происходила смена почты</p>
+						{% else %}
+							<p style="font-size:20px;font-family: 'Roboto';font-weight: 400;">Ваш новый пароль: {{passwd}}</p>
+						{% endif %}
+						<p style="font-size:20px;font-family: 'Roboto';font-weight: 400;">В случае возникновения вопросов обращайтесь на адрес help@e-lnk.ru.</p>
+						<br>
+						<p style="font-size:20px;font-family: 'Roboto';font-weight: 400;">С уважением, команда E-lnk.</p>
+						<br>
+						<p style="font-size:16px;font-family: 'Roboto';font-weight: 400;">Данное письмо сгенерировано автоматически и на него не нужно отвечать.</p>
+					</tr>
+				</table>
+				 <hr style="height:2px;border-width:0;color:#3d96e5;background-color:#3d96e5"> 
+			</td>
+		</tr>
+		<tr>
+			<td class="table-850" align="center">
+				<p style="font-size:16px;font-family: 'Roboto';font-weight: 400;">Сервис по сокращению и мониторингу ссылок</p>
+				<a href="e-lnk.ru" class="link" style="font-size:16px;font-family: 'Roboto';font-weight: 500;color:#3d96e5;">e-lnk.ru</a>
+			</td>	
+		</tr>
+	</table>
+</body>

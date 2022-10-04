@@ -155,8 +155,8 @@ class StatSerializer(serializers.ModelSerializer):
         cache.delete_many(keys_cache_info_link)
         if self.context["optimize_panel"]:
             return "ok"
-        if len(obj_lnk) > 0:
-            self.context["queryset"].delete()
+        #if len(obj_lnk) > 0:
+        #    self.context["queryset"].filter(id__in=self.context["delete_id"]).delete()
         data_obj = {
             "country": countrys,
             "device": device_id,

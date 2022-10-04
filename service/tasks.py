@@ -1,4 +1,5 @@
 import datetime
+import psutil
 from telegram import Bot
 from django.db.models import Q
 from django.core.cache import cache
@@ -15,6 +16,7 @@ from service.user_time_now import UserTime
 from service.cache_module import CacheModule
 from service.statistic_link import StatLink
 from collections import OrderedDict
+
 
 
 bot = Bot(token=TELEGRAM_TOKEN)
@@ -73,7 +75,7 @@ def saver_info() -> None:
     data_service_time = cache.get("time_service")
     data_service_time[start] = time_service
     cache.set("time_service", data_service_time, None)
-    cache.set("count_cache_infolink", 0, None)
+    cache.set("count_cache_infolink", 0, None) 199 299
 
 
 @app.task
@@ -120,7 +122,6 @@ def cleaner_db() -> None:
 
 @app.task
 def optimize_ttl_and_perfomance() -> None:
-    import psutil
 
     time_live = int(cache.get("live_cache"))
     """Если нагрузка на ядро более 30%, увеличиваем жизнь кеша на 10 сек
@@ -154,9 +155,11 @@ def optimize_ttl_and_perfomance() -> None:
                 link_check__author=user
             )
             obj_lnk = list(queryset.values())
-            queryset.delete()
+            delete_id = [obj["id"] for obj in obj_lnk]
+            queryset.filter(id__in=delete_id).delete()
             for key, ids in obj_lnk_id[0].items():
                 ids = int(ids)
+                delete_id.append(ids)
                 data = [
                     info_lnk for info_lnk in obj_lnk if info_lnk["link_check_id"] == ids
                 ]

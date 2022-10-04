@@ -7,10 +7,59 @@ from django.core.mail import EmailMessage
 from users.models import User
 from .generator_code import GeneratorCode as Generator_activation_code
 from .server_stat import ServerStat
+from celery import shared_task
 
 
 class RegMail:
-    @staticmethod
+    
+    @shared_task
+    def change_pass(email, reset_key=False, passwd=False):
+        if reset_key:
+            reset_link = f"https://e-lnk.ru/api/v1/change/{email}/{reset_key}"
+            message = get_template("reset_pass.html").render({"reset_link": reset_link})
+        else:
+            message = get_template("reset_pass.html").render({"passwd": passwd})
+        msg = EmailMessage(
+                "Информирование E-LNK.RU",
+                message,
+                "info@e-lnk.ru",
+                [str(email)],
+        )
+        msg.content_subtype = "html"
+        msg.send()
+    
+    @shared_task
+    def change_mail(old_email, new_email, user_id=None , old_msg=False):
+        if old_msg:
+            context = {
+                "old_email": old_email,
+                "new_email": new_email
+            }
+            message = get_template("change_email.html").render(context=context)
+            msg = EmailMessage(
+                "Информирование E-LNK.RU",
+                message,
+                "info@e-lnk.ru",
+                [str(old_email)],
+            )
+        else:
+            activation_code = Generator_activation_code.public_id()
+            activate_link = (
+                "https://e-lnk.ru/api/v1/activate"
+                + f"/{user_id}/{activation_code}"
+                )
+            context = {"activate_link": activate_link}
+            message = get_template("change_email.html").render(context=context)
+            msg = EmailMessage(
+                "Информирование E-LNK.RU",
+                message,
+                "info@e-lnk.ru",
+                [str(new_email)],
+            )
+        msg.content_subtype = "html"
+        msg.send()
+
+    @shared_task
     def send_code(user_instance: User) -> None:
         """Отправка кода регистрации"""
         activation_code = Generator_activation_code.public_id()
@@ -47,6 +96,7 @@ class RegMail:
                     "info@e-lnk.ru",
                     [str(email_user[:-4])],
                 )
+                msg.content_subtype = "html"
                 msg.attach_file(f"pdf_storage/{email_user}")
                 msg.send()
             except:

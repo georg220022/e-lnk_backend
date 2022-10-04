@@ -31,7 +31,7 @@ ALLOWED_HOSTS = [
     "https://e-lnk.ru",
 ]
 SECRET_KEY = os.getenv("SECRET_KEY")
-DEBUG = False
+DEBUG = True
 BASE_DIR = Path(__file__).resolve().parent.parent
 AUTH_USER_MODEL = "users.User"
 
@@ -87,7 +87,7 @@ REDIS_BASE_FOR_CACHE_LINK = redis.StrictRedis(
     # decode_responses=True
 )
 
-CELERY_BROKER_URL = f"redis://:{REDIS_PASS}@127.0.0.1:{REDIS_PORT}/{REDIS_DB_STAT}"  # Пока запускаю в докере - redis_db
+CELERY_BROKER_URL = f"redis://:{REDIS_PASS}@redis_db:{REDIS_PORT}/{REDIS_DB_STAT}"  # Пока запускаю в докере - redis_db 127.0.0.1
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 
