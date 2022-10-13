@@ -54,7 +54,7 @@ class CustomRefresh(viewsets.ViewSet, BlacklistMixin):
             else:
                 return Response(err_data, status=status.HTTP_401_UNAUTHORIZED)
         else:
-            return Response(err_data, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "гостевой режим"}, status=status.HTTP_200_OK)
         user = get_object_or_404(User, public_key=public_key)
         refresh = RefreshToken.for_user(user)
         data = {
@@ -118,45 +118,54 @@ class RegistrationAPIView(APIView):
     ]
 
     def post(self, request: HttpRequest) -> Response:
-        if request.user.is_anonymous:
-            serializer = self.serializer_class(data=request.data)
-            if serializer.is_valid(raise_exception=True):
-                serializer.save()
-                user_instance = serializer.instance
-                refresh = MyTokenObtainPairSerializer.get_token(user_instance)
-                data = {
-                    "email": str(user_instance),
-                    "access": str(refresh.access_token),
-                }
-                data = Response(data, status=status.HTTP_200_OK)
-                data.set_cookie(
-                    key="refresh",
-                    value=str(refresh),
-                    expires=5184000,
-                    secure=True,  # рансервер не поддерживает https
-                    httponly=True,
+        if not cache.get("registrations_on_site"):
+            eml_obj = request.data.get("email", False)
+            if eml_obj:
+                if User.objects.filter(email=eml_obj).exists():
+                    msg = "Email уже зарегестрирован"
+                    return Response({"error": msg}, status=status.HTTP_400_BAD_REQUEST)
+            if request.user.is_anonymous:
+                serializer = self.serializer_class(data=request.data)
+                if serializer.is_valid(raise_exception=True):
+                    serializer.save()
+                    user_instance = serializer.instance
+                    refresh = MyTokenObtainPairSerializer.get_token(user_instance)
+                    data = {
+                        "email": str(user_instance),
+                        "access": str(refresh.access_token),
+                    }
+                    data = Response(data, status=status.HTTP_200_OK)
+                    data.set_cookie(
+                        key="refresh",
+                        value=str(refresh),
+                        expires=5184000,
+                        secure=True,  # рансервер не поддерживает https
+                        httponly=True,
+                    )
+                    data.set_cookie("registration_elink", max_age=2592000)
+                    id_email_user = {"id": user_instance.id, "email": user_instance.email}
+                    RegMail.send_code.delay(id_email_user)
+                    cache.incr("server_new_users")
+                    return data
+            if serializer.errors.get("email", False):
+                msg = {"error": "Пользователь с таким email уже существует"}
+            else:
+                ServerStat.reported(
+                    "RegistrationAPIView_129", f"Ошибка регистрации: {serializer.errors}"
                 )
-                data.set_cookie("registration_elink", max_age=2592000)
-                RegMail.send_code.delay(user_instance)
-                cache.incr("server_new_users")
-                return data
-        if serializer.errors.get("email", False):
-            msg = {"error": "Пользователь с таким email уже существует"}
-        else:
-            ServerStat.reported(
-                "RegistrationAPIView_129", f"Ошибка регистрации: {serializer.errors}"
-            )
-            msg = {"error": "Ошибка регистрации, обратитесь в поддержку"}
-            cache.incr("server_error_register")
+                msg = {"error": "Ошибка регистрации, обратитесь в поддержку"}
+                cache.incr("server_error_register")
+            return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+        msg = {"error": "Извините, регистрация временно приостановлена"}
         return Response(msg, status=status.HTTP_400_BAD_REQUEST)
-
 
 class EntersOnSite(viewsets.ViewSet):
     def get_permissions(self):
         return (permissions.AllowAny(),)
 
     def get_logout(self, request):
-        data = Response("ты вышел", status=status.HTTP_200_OK)
+        data = Response(status=status.HTTP_200_OK)
+        # data.set_cookie("refresh", '1', max_age=0)
         data.delete_cookie("refresh")
         cache.incr("server_logout_account")
         return data
@@ -189,7 +198,7 @@ class EntersOnSite(viewsets.ViewSet):
                     )
                     cache.incr("server_good_enter")
                     return new_resp
-            else:
+                # else:
                 cache.incr("server_bad_enter")
                 msg = {"error": "Не верный емейл или пароль"}
                 return Response(msg, status=status.HTTP_400_BAD_REQUEST)
@@ -206,7 +215,7 @@ class ActivateAccount(viewsets.ViewSet):
         self, request: HttpRequest, id=None, activation_code=None
     ) -> Response:
         check_cookies = request.COOKIES.get("registration_elink", False)
-        check_cookies = True
+        #check_cookies = True
         if check_cookies is not False:
             if (id and activation_code) is not None:
                 user = get_object_or_404(User, id=id)
@@ -214,6 +223,7 @@ class ActivateAccount(viewsets.ViewSet):
                     obj = REDIS_FOR_ACTIVATE.get(id)
                     if obj.decode("utf-8") == str(activation_code):
                         user.is_active = True
+                        user.send_stat_email = True
                         user.save()
                         REDIS_FOR_ACTIVATE.delete(id)
                         response = redirect("https://e-lnk.ru")
@@ -230,15 +240,19 @@ class UserSettings(viewsets.ViewSet):
 
     def get_cahnge_settings(self, request: HttpRequest) -> Response:
         instance = User.objects.get(id=request.user.id)
-        serializer = ChangeSettingsSerializer(data=request.data, instance=instance, partial=True)
+        serializer = ChangeSettingsSerializer(
+            data=request.data, instance=instance, partial=True
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
         if "email" in request.data:
-            RegMail.change_mail.delay(None, serializer.data.get("email", "help@e-lnk.ru"), instance.id)
-        if "utc" in request.data:
+            RegMail.change_mail.delay(
+                None, serializer.data.get("email", "help@e-lnk.ru"), instance.id
+            )
+        if "timezone" in request.data:
             CacheModule.remove_stat_link(instance.id)
-        data = Response(status=status.HTTP_200_OK)
         data.set_cookie("registration_elink", max_age=2592000)
+        data = Response(status=status.HTTP_200_OK)
         return data
 
     def get_delete_acc(self, request: HttpRequest) -> Response:
@@ -261,30 +275,32 @@ class UserSettings(viewsets.ViewSet):
     def get_settings(self, request: HttpRequest) -> Response:
         user = User.objects.get(id=request.user.id)
         obj = {
-            "utc": user.my_timezone,
+            "timezone": user.my_timezone,
             "email": user.email,
             "sendStat": user.send_stat_email,
         }
-        data = json.dumps(obj)
-        return Response(data, status=status.HTTP_200_OK)
+        return Response(obj, status=status.HTTP_200_OK)
+
 
 class ResetUserInfo(viewsets.ViewSet):
     def get_permissions(self):
         return (permissions.AllowAny(),)
-    
+
     def send_code_reset_pass(self, request):
         emails = request.data.get("email", False)
         if emails:
-            if not cache.has_key(f"wait_{emails}"):                          
+            if not cache.has_key(f"wait_{emails}"):
                 if User.objects.filter(email=emails).exists():
-                    cache.set(f"wait_{emails}", "ok", 300)
+                    cache.set(f"wait_{emails}", "ok", 900)
                     reset_pass_key = GeneratorId.reset_pass_key()
                     cache.set(f"reset_pass_{emails}", reset_pass_key, 86400)
                     RegMail.change_pass(emails, reset_pass_key)
                     return Response(status=status.HTTP_200_OK)
                 msg = {"error": "Почты не существует на сервисе"}
                 return Response(msg, status=status.HTTP_400_BAD_REQUEST)
-            msg = {"error": "Запрос восстановления пароля не чаще 1 раза в 5 минут"}
+            msg = {
+                "error": "Запрос восстановления пароля не чаще 1 раза в 15 минут, иногда письмо приходит не моментально, так же проверьте во входящих 'спам' или 'рассылки'"
+            }
             return Response(msg, status=status.HTTP_400_BAD_REQUEST)
         msg = {"error": "Поле email обязательно"}
         return Response(msg, status=status.HTTP_400_BAD_REQUEST)
@@ -300,5 +316,5 @@ class ResetUserInfo(viewsets.ViewSet):
                     user.save()
                     cache.delete(f"reset_pass_{email}")
                     RegMail.change_pass(email, False, new_pass)
-                    return redirect("https://e-lnk.ru/pass_reset")
+                    return redirect("https://e-lnk.ru/change_ok")
         return redirect("https://e-lnk.ru/404")

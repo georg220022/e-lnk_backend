@@ -73,7 +73,7 @@ class StatisticGet:
         )
         cache.set(f"statx_info_{ids}_{dt.now()}", data, 180000)
         if not cache.has_key(f"count_infolink_{author_id}"):
-            cache.set(f"count_infolink_{author_id}")
+            cache.set(f"count_infolink_{author_id}", 0, 180000)
         cache.incr(f"count_infolink_{author_id}")
         cache.incr("count_cache_infolink")
 

@@ -31,7 +31,7 @@ ALLOWED_HOSTS = [
     "https://e-lnk.ru",
 ]
 SECRET_KEY = os.getenv("SECRET_KEY")
-DEBUG = True
+DEBUG = False
 BASE_DIR = Path(__file__).resolve().parent.parent
 AUTH_USER_MODEL = "users.User"
 
@@ -87,7 +87,7 @@ REDIS_BASE_FOR_CACHE_LINK = redis.StrictRedis(
     # decode_responses=True
 )
 
-CELERY_BROKER_URL = f"redis://:{REDIS_PASS}@redis_db:{REDIS_PORT}/{REDIS_DB_STAT}"  # Пока запускаю в докере - redis_db 127.0.0.1
+CELERY_BROKER_URL = f"redis://:{REDIS_PASS}@127.0.0.1:{REDIS_PORT}/{REDIS_DB_STAT}"  # Пока запускаю в докере - redis_db 127.0.0.1
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 
@@ -197,15 +197,15 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.AnonRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "user": "99999/hour", #os.getenv("USER"),
-        "anon": "99999/hour", #os.getenv("ANON"),
-        "create_link_user": "99999/hour", #os.getenv("CREATE_LINK_USER"),
-        "create_link_anonym": "99999/hour", #os.getenv("CREATE_LINK_ANONYM"),
-        "user_pass_try": "99999/hour", #os.getenv("USER_PASS_TRY"),
-        "anon_pass_try": "99999/hour", #os.getenv("ANON_PASS_TRY"),
-        "anon_registration": "99999/hour", #os.getenv("ANON_REGISTRATION"),
-        "pass_open_anon": "99999/hour", #os.getenv("ANON_TRY_PASS"),
-        "pass_open_user": "99999/hour", #os.getenv("USER_TRY_PASS"),
+        "user": "1200/hour",
+        "anon": "600/hour",
+        "create_link_user": "500/hour",
+        "create_link_anonym": "150/hour",
+        "user_pass_try": "50/hour",
+        "anon_pass_try": "50/hour",
+        "anon_registration": "10/hour",
+        "pass_open_anon": "50/hour",
+        "pass_open_user": "100/hour",
     },
 }
 
@@ -348,9 +348,12 @@ stat_data = {
     "server_good_enter": 0, # Входов в аккаунт удачных (ввести логин-пароль)
     "server_bad_enter": 0, # Входов в аккаунт НЕ удачных (ввести логин-пароль)
     "server_bad_try_activated": 0, # Неудачных попыток активации
+    "server_time_generate_all_pdf": ["Генерация отчетов"], # Время генерации отчетов + очистка данных
+    "server_time_send_pdf": ["Рассылка отчетов"], # Время рассылки всех сообщений
 }
 cache.set_many(stat_data, None)
-
+#cache.get_or_set("time_generate_all_pdf", "Значение не обнаружено", None)
+#cache.get_or_set("time_send_pdf", "Значение не обнаружено", None)
 #  Параметры не для обслуживания сервера, не обнуляются в фоновых задачах по окончании дня
 technical_data = {
     "send_critical_msg": "No",
@@ -361,3 +364,4 @@ technical_data = {
     "time_service": {}
 }
 cache.set_many(technical_data, None)
+cache.set("registrations_on_site", True, None)

@@ -30,16 +30,15 @@ class CheckLink:
         """Проверка имеется ли лимит у ссылки"""
         if not secure:
             limited_link = obj.limited_link
-            if limited_link <= -1:
-                return True
-            return False
+            ids = obj.id
         else:
             limited_link = obj["limited_link"]
+            ids = obj["id"]
         if limited_link <= -1:
             return True
         elif limited_link >= 1:
             value = limited_link - 1
-            LinkRegUser.objects.filter(id=int(obj["id"])).update(limited_link=value)
+            LinkRegUser.objects.filter(id=ids).update(limited_link=value)
             return True
         else:
             return False
@@ -82,8 +81,8 @@ class CheckLink:
         cache.incr("server_bad_edit_descrip")
         return False
 
+
 class CheckSettings:
-    
     @staticmethod
     def validate(user_id, obj):
         user = User.objects.get(id=user_id)
@@ -132,4 +131,3 @@ class CheckSettings:
                 msg = "Минимальная длинна пароля 8, максимальная 16 симолов"
                 return msg
         return data
-        

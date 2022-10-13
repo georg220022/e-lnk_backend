@@ -1,6 +1,6 @@
 import logging
 from collections import OrderedDict
-from rest_framework import viewsets
+from rest_framework import viewsets, permissions
 from rest_framework.response import Response
 from elink_index.models import LinkRegUser, InfoLink
 from .serializers import StatSerializer
@@ -13,6 +13,9 @@ logger = logging.getLogger(__name__)
 
 
 class PersonalStat(viewsets.ViewSet):
+    def get_permissions(self):
+        return (permissions.IsAuthenticated(),)
+
     def get_full_stat(self, request: HttpRequest) -> Response:
         old_data = cache.get(request.user.id)
         if old_data:
@@ -29,12 +32,11 @@ class PersonalStat(viewsets.ViewSet):
         )
         query_list = list(queryset.values())
         delete_id = [obj["id"] for obj in query_list]
+        queryset.filter(id__in=delete_id).delete()
         context = {
             "query_list": query_list,
             "action": self.action,
             "user_tz": request.user.my_timezone,
-            #"queryset": queryset,
-            #"delete_id": delete_id,
             "optimize_panel": False,
         }
         serializer = StatSerializer(

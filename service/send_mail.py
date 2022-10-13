@@ -1,3 +1,4 @@
+import email
 import os
 from datetime import datetime
 from elink.settings import REDIS_FOR_ACTIVATE
@@ -11,30 +12,26 @@ from celery import shared_task
 
 
 class RegMail:
-    
     @shared_task
     def change_pass(email, reset_key=False, passwd=False):
         if reset_key:
-            reset_link = f"https://e-lnk.ru/api/v1/change/{email}/{reset_key}"
+            reset_link = f"https://e-lnk.ru/change/{email}/{reset_key}"
             message = get_template("reset_pass.html").render({"reset_link": reset_link})
         else:
             message = get_template("reset_pass.html").render({"passwd": passwd})
         msg = EmailMessage(
-                "Информирование E-LNK.RU",
-                message,
-                "info@e-lnk.ru",
-                [str(email)],
+            "Информирование E-LNK.RU",
+            message,
+            "info@e-lnk.ru",
+            [str(email)],
         )
         msg.content_subtype = "html"
         msg.send()
-    
+
     @shared_task
-    def change_mail(old_email, new_email, user_id=None , old_msg=False):
+    def change_mail(old_email, new_email, user_id=None, old_msg=False):
         if old_msg:
-            context = {
-                "old_email": old_email,
-                "new_email": new_email
-            }
+            context = {"old_email": old_email, "new_email": new_email}
             message = get_template("change_email.html").render(context=context)
             msg = EmailMessage(
                 "Информирование E-LNK.RU",
@@ -45,9 +42,8 @@ class RegMail:
         else:
             activation_code = Generator_activation_code.public_id()
             activate_link = (
-                "https://e-lnk.ru/api/v1/activate"
-                + f"/{user_id}/{activation_code}"
-                )
+                "https://e-lnk.ru/activate" + f"/{user_id}/{activation_code}"
+            )
             context = {"activate_link": activate_link}
             message = get_template("change_email.html").render(context=context)
             msg = EmailMessage(
@@ -56,16 +52,17 @@ class RegMail:
                 "info@e-lnk.ru",
                 [str(new_email)],
             )
+            REDIS_FOR_ACTIVATE.set(user_id, activation_code, 2600000)
         msg.content_subtype = "html"
         msg.send()
+        cache.incr("server_send_msg_email")
 
     @shared_task
-    def send_code(user_instance: User) -> None:
+    def send_code(data_user: dict) -> None:
         """Отправка кода регистрации"""
         activation_code = Generator_activation_code.public_id()
         activate_link = (
-            "https://e-lnk.ru/api/v1/activate"
-            + f"/{user_instance.id}/{activation_code}"
+            "https://e-lnk.ru/activate" + f"/{data_user['id']}/{activation_code}"
         )
         message = get_template("reg-confirm-email.html").render(
             {"activate_link": activate_link}
@@ -74,16 +71,17 @@ class RegMail:
             "Регистрация E-LNK.RU",
             message,
             "info@e-lnk.ru",
-            [str(user_instance)],
+            [str(data_user["email"])],
         )
         msg.content_subtype = "html"
         msg.send()
-        REDIS_FOR_ACTIVATE.set(user_instance.id, activation_code, 2600000)
+        REDIS_FOR_ACTIVATE.set(data_user["id"], activation_code, 2600000)
         cache.incr("server_send_msg_email")
 
     @staticmethod
     def send_stat_pdf(yesterday: datetime) -> None:
         """Отправка статистики пользователям"""
+        list_bad_mail = []
         list_mail = os.listdir("pdf_storage")
         for email_user in list_mail:
             try:
@@ -105,6 +103,10 @@ class RegMail:
                     f"send_stat_{email_user}",
                     f"Не удалось отправить статистику {email_user}",
                 )
+                list_bad_mail.append(email_user)
+                #data = cache.get("bad_try_send_mail")
+                #data.append(email_user)
+                #cache.set("bad_try_send_mail", data, None)
         """Безопасно удаляем все файлы с расширением .pdf"""
         filelist = [files for files in list_mail if files.endswith(".pdf")]
         [
@@ -112,3 +114,5 @@ class RegMail:
             for files in filelist
             if os.path.isfile(os.path.join("pdf_storage", files))
         ]
+        if len(list_bad_mail) > 0:
+            User.objects.filter(email__in=list_bad_mail).update(send_stat_email=False)

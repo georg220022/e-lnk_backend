@@ -8,13 +8,7 @@ from django.db.models import Q
 class StatCreate:
     """Запись данных в pdf файл"""
 
-    def every_day_stat(usr) -> None:
-        query_list = list(
-            InfoLink.objects.select_related("link_check")
-            .only("author_id")
-            .filter(Q(link_check__author_id=int(usr[3])))
-            .values()
-        )
+    def every_day_stat(usr, query_list) -> None:
         context = {
             "query_list": query_list,
             "action": "task_celery",
@@ -34,7 +28,7 @@ class StatCreate:
             pc = info["statistics"]["clicks"]["pc"]
             phone = info["statistics"]["clicks"]["mobile"]
             other = info["statistics"]["clicks"]["other"]
-            re_click = cache.get(f"statx_aclick_24_{info['linkId']}")
+            re_click = cache.get(f"statx_aclick_{usr[3]}_{info['linkId']}")
             if not re_click:
                 re_click = 0
             one_lnk_stat = [

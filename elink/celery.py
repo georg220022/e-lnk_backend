@@ -10,7 +10,7 @@ app.config_from_object("django.conf:settings", namespace="CELERY")
 app.autodiscover_tasks()
 app.conf.beat_schedule = {
     # Сохраняем данные о кликах по ссылкам каждый час одним большим запросом bulk_create
-    "saver_info": {                                   
+    "saver_info": { 
         "task": "service.tasks.saver_info",
         "schedule": crontab(minute="0", hour="*/1"),
     },
@@ -18,7 +18,7 @@ app.conf.beat_schedule = {
     # Так же высчитывает статистику если для некоторого пользователя слишком много кликов
     "optimize_ttl_and_perfomance": {
         "task": "service.tasks.optimize_ttl_and_perfomance",
-        "schedule": crontab(),
+        "schedule": crontab(minute=5, hour=1),
     },
     # Отправка полной статистики в telegram администраторам
     "send_admin_stat_tg": {

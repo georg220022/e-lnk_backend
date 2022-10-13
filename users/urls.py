@@ -12,7 +12,10 @@ from .views import (
 app_name = "authentication"
 
 urlpatterns = [
-    path("/change/<str:email>/<str:reset_code>", ResetUserInfo.as_view({"get": "reset_pass"})),
+    path(
+        "/change/<str:email>/<str:reset_code>",
+        ResetUserInfo.as_view({"get": "reset_pass"}),
+    ),
     path("/reset", ResetUserInfo.as_view({"post": "send_code_reset_pass"})),
     path("/registration", RegistrationAPIView.as_view()),
     path("/change_pass", ChangePasswordView.as_view()),
@@ -33,4 +36,4 @@ urlpatterns = [
             }
         ),
     ),
-    ]
+]

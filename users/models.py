@@ -8,7 +8,7 @@ from django.contrib.auth.models import (
 
 
 class MyUserManager(BaseUserManager):
-    def _create_user(self, email, password, **extra_fields):
+    def _create_user(self, email, password, my_timezone, **extra_fields):
         if not email:
             raise ValueError("Вы не ввели Email")
         user = self.model(
@@ -16,15 +16,19 @@ class MyUserManager(BaseUserManager):
             **extra_fields,
         )
         user.subs_type = "BTEST"
+        user.my_timezone = my_timezone
         user.set_password(password)
+        # user.send_stat_email = True
         user.save(using=self._db)
         return user
 
-    def create_user(self, email, password):
-        return self._create_user(email, password)
+    def create_user(self, email, password, my_timezone):
+        return self._create_user(email, password, my_timezone)
 
-    def create_superuser(self, email, password):
-        return self._create_user(email, password, is_staff=True, is_superuser=True)
+    def create_superuser(self, email, password, my_timezone):
+        return self._create_user(
+            email, password, my_timezone, is_staff=True, is_superuser=True
+        )
 
 
 class User(AbstractBaseUser, PermissionsMixin):

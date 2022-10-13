@@ -155,8 +155,6 @@ class StatSerializer(serializers.ModelSerializer):
         cache.delete_many(keys_cache_info_link)
         if self.context["optimize_panel"]:
             return "ok"
-        #if len(obj_lnk) > 0:
-        #    self.context["queryset"].filter(id__in=self.context["delete_id"]).delete()
         data_obj = {
             "country": countrys,
             "device": device_id,
@@ -171,7 +169,9 @@ class StatSerializer(serializers.ModelSerializer):
             с каких устройств и сколько раз перешли
         """
         if self.context["action"] == "get_full_stat":
-            days = CacheModule.get_days_click_link(day_week, obj)
+            obj_ids = obj.id
+            obj_authors_id = obj.author_id
+            days = CacheModule.get_days_click_link(day_week, obj_ids, obj_authors_id)
             actual_click_today = days[day_week] + clicked_today
             days[day_week] = actual_click_today
             os = {
@@ -213,8 +213,6 @@ class StatSerializer(serializers.ModelSerializer):
                 "other": device_id[7],
             }
             data_obj["clicks"] = clicked
-        if self.context["optimize_panel"]:
-            return True
         return data_obj
 
     def get_lock(self, obj):

@@ -18,11 +18,10 @@ from service.statistic_link import StatLink
 from collections import OrderedDict
 
 
-
 bot = Bot(token=TELEGRAM_TOKEN)
 
 
-@app.task
+@app.task()
 def saver_info() -> None:
     """Ежечасно собираем данные по кликам из кеша и записываем в базу,
     попутно удаляем из кеша обработанную информацию"""
@@ -41,7 +40,6 @@ def saver_info() -> None:
             & Q(trust_rating__gt=1)  # Q(subs_type__in=["MOD", "BTEST"]) &
         ).values_list("my_timezone", "send_stat_email", "email", "id", "subs_type")
     )
-    data_id = []
     for usr in user_list:
         # Если этот пользователь не менял свой часовой пояс в настройках (UTC)
         if not cache.get(f"edit_utc_{usr[3]}"):
@@ -51,16 +49,21 @@ def saver_info() -> None:
             if user_hours.strftime("%H") == "00":
                 """Если у пользователя полночь (00:00) по его местному времени,
                 высчитываем статистику за прошедший день для недельной статистики"""
-                data_id.append(int(usr[3]))
+                # data_id.append(int(usr[3]))
                 day_week = user_hours.isoweekday()
                 # Если у пользователя статус не дефолтного пользователя - считаем ему статистику
                 if usr[4] != "REG":
                     WriteStat.one_week(day_week, usr)
                     # Если не дефолтный юзер включил отправку статистики на емейл
                     if usr[1] is True:
+                        queryset = InfoLink.objects.select_related("link_check").filter(
+                            Q(link_check__author_id=int(usr[3]))
+                        )
+                        query_list = list(queryset.values())
+                        delete_id = [obj["id"] for obj in query_list]
+                        InfoLink.objects.filter(id__in=delete_id).delete()
                         """Если пользователь указал в своем профиле присылать ему статистику на почту"""
-                        StatCreate.every_day_stat(usr)
-                        RegMail.send_stat_pdf(yesterday)
+                        StatCreate.every_day_stat(usr, query_list)
                 # Если пользователь стандартный - только прибавляем в БД количество переходов за день
                 else:
                     WriteStat.end_day(False, usr)
@@ -70,12 +73,23 @@ def saver_info() -> None:
                 cache.delete_pattern(f"statx_aclick_{usr[3]}_*")
                 cache.delete_pattern(f"statx_click_{usr[3]}_*")
     # Удаляем статистику переходов из базы, у пользователей для которых произвели рассчет
-    InfoLink.objects.filter(link_check__author_id__in=data_id).delete()
+    # InfoLink.objects.filter(link_check__author_id__in=data_id).delete()
     time_service = datetime.datetime.now() - start
     data_service_time = cache.get("time_service")
     data_service_time[start] = time_service
     cache.set("time_service", data_service_time, None)
-    cache.set("count_cache_infolink", 0, None) 199 299
+    cache.set("count_cache_infolink", 0, None)
+    stop = datetime.datetime.now() - start
+    # if cache.has_key("")
+    time_generate = cache.get("server_time_generate_all_pdf")
+    time_generate.append(f"{datetime.datetime.now()}: {stop}")
+    cache.set("server_time_generate_all_pdf", time_generate, None)
+    start_2 = datetime.datetime.now()
+    RegMail.send_stat_pdf(yesterday)
+    stop_2 = datetime.datetime.now() - start_2
+    time_send_pdf = cache.get("server_time_send_pdf")
+    time_send_pdf.append(f"{datetime.datetime.now()}: {stop_2}")
+    cache.set("server_time_send_pdf", time_send_pdf, None)
 
 
 @app.task
@@ -85,8 +99,6 @@ def send_admin_stat_tg() -> None:
     yesterday = today - datetime.timedelta(days=1)
     # Начало бота
     data_string = TelegramStat.server_stat_day(yesterday)
-    """Максимальное количество символов в сообщении телеграм - 4000 символов,
-    если отчет более 4000 символов - отправляем частями"""
     if len(data_string) > 4000:
         end_str = 4000
         start_str = 0
@@ -114,7 +126,6 @@ def send_admin_stat_tg() -> None:
 @app.task
 def cleaner_db() -> None:
 
-    """Очищаем устаревшие данные, удаляем протухшие токены из черного листа"""
     today = datetime.date.today()
     day_ago_4 = today - datetime.timedelta(days=4)
     InfoLink.objects.filter(date_check__date__lt=day_ago_4).delete()
@@ -124,8 +135,6 @@ def cleaner_db() -> None:
 def optimize_ttl_and_perfomance() -> None:
 
     time_live = int(cache.get("live_cache"))
-    """Если нагрузка на ядро более 30%, увеличиваем жизнь кеша на 10 сек
-    иначе если время жизни кеша не 10 сек(это минимум) - уменьшаем на 10"""
     if int(psutil.cpu_percent()) > 30:
         if time_live < 3600:
             time_live += 10

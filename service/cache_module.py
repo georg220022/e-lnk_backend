@@ -13,12 +13,18 @@ class CacheModule:
             name_lnk = serializer_data.get("linkName", False)
             if isinstance(name_lnk, str):
                 if len(name_lnk) == 0:
-                    bad_word = ["https://www.", "http://www.", "https://", "http://", "wwww."]
+                    bad_word = [
+                        "https://www.",
+                        "http://www.",
+                        "https://",
+                        "http://",
+                        "wwww.",
+                    ]
                     obj_long_lnk = serializer_data.get("longLink")
                     for objs in bad_word:
                         len_objs = len(objs)
                         if objs == obj_long_lnk[0:len_objs]:
-                            name_lnk = obj_long_lnk[len(objs):]
+                            name_lnk = obj_long_lnk[len(objs) :]
                             break
             lnk_id = serializer_data.get("linkId")
             stop_date = serializer_data.get("linkEndDate")
@@ -99,12 +105,18 @@ class CacheModule:
                         if description:
                             obj["linkName"] = description
                         else:
-                            bad_word = ["https://www.", "http://www.", "https://", "http://", "wwww."]
+                            bad_word = [
+                                "https://www.",
+                                "http://www.",
+                                "https://",
+                                "http://",
+                                "wwww.",
+                            ]
                             obj_long_lnk = obj["longLink"]
                             for objs in bad_word:
                                 len_objs = len(objs)
                                 if objs == obj_long_lnk[0:len_objs]:
-                                    obj["linkName"] = obj_long_lnk[len(objs):]
+                                    obj["linkName"] = obj_long_lnk[len(objs) :]
                                     break
                     if isinstance(passwd, str):
                         if passwd:
@@ -137,7 +149,8 @@ class CacheModule:
                 cache.set(user_id, new_data, timer)
             else:
                 cache.delete(user_id)
-            cache.delete_many(key_delete_data)
+            if len(key_delete_data) > 0:
+                cache.delete_many(key_delete_data)
 
     @staticmethod
     def count_lnk(user_id) -> bool:
@@ -149,19 +162,21 @@ class CacheModule:
         return int(cache.get(f"link_limit_{user_id}"))
 
     @staticmethod
-    def get_days_click_link(day_week, obj):
+    def get_days_click_link(day_week, obj_id, obj_author_id):
         """Модуль получения статистики переходов за текущую неделю по ссылке"""
-        if not cache.has_key(f"ready_week_{day_week}_{obj.author_id}_{obj.id}"):
+        if not cache.has_key(f"ready_week_{day_week}_{obj_author_id}_{obj_id}"):
             days = {}
             for number in range(1, 8):
-                obj_day = cache.get(f"week_{number}_{obj.id}")
+                obj_day = cache.get(
+                    f"week_{number}_statx_click_{obj_author_id}_{obj_id}"
+                )
                 if isinstance(obj_day, int):
-                    days[number] = obj
+                    days[number] = obj_day
                 else:
                     days[number] = 0
-            cache.set(f"ready_week_{day_week}_{obj.author_id}_{obj.id}", days, 60000)
+            cache.set(f"ready_week_{day_week}_{obj_author_id}_{obj_id}", days, 60000)
         else:
-            days = cache.get(f"ready_week_{day_week}_{obj.author_id}_{obj.id}")
+            days = cache.get(f"ready_week_{day_week}_{obj_author_id}_{obj_id}")
         return days
 
     @staticmethod
@@ -191,3 +206,9 @@ class CacheModule:
             else:
                 countrys[obj] = cache_countrys[obj]
         return hour, device_id, countrys
+
+    @staticmethod
+    def remove_stat_link(user_id):
+        cache.delete_pattern(f"statx_aclick_{user_id}_*")
+        cache.delete_pattern(f"statx_click_{user_id}_*")
+        cache.delete_pattern(f"calculated_{user_id}_*")

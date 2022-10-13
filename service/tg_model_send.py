@@ -50,6 +50,8 @@ class TelegramStat:
             "Удачных входов в аккаунт",
             "Неудачных входов",
             "Неудачных активаций аккаунта",
+            "Время генерации всех отчетов pdf",
+            "Время отправки отчетов",
         ]
         data_stat = cache.get_many(
             [
@@ -96,6 +98,8 @@ class TelegramStat:
                 "server_good_enter",  # Входов в аккаунт удачных (ввести логин-пароль)
                 "server_bad_enter",  # Входов в аккаунт НЕ удачных (ввести логин-пароль)
                 "server_bad_try_activated",  # Неудачных попыток активации
+                "server_time_generate_all_pdf",  # Время генерации всех отчетов pdf + очистка данных перед отправкой
+                "server_time_send_pdf",  # Время отправки отчетов
             ]
         )
         data_reports = cache.get("reporteds")

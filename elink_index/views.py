@@ -111,18 +111,22 @@ class PostlinkViewset(viewsets.ViewSet):
             request
         )  # Модуль проверки прав на редактирование описания
         if obj:
-            description = request.data.get("linkName", False)
-            if description:
+            if "linkName" in request.data:
+                lnk_name_obj = request.data.get("linkName")
+                if len(lnk_name_obj) == 0:
+                    description = ""
+                else:
+                    description = lnk_name_obj
                 obj.description = description
             else:
-                obj.description = ""
-                description = ""
-            passwd = request.data.get("linkPassword", False)
-            if passwd:
+                description = False
+            if "linkPassword" in request.data:
+                passwd = request.data.get("linkPassword")
+                if len(passwd) == 0:
+                    passwd = ""
                 obj.secure_link = passwd
             else:
-                obj.secure_link = ""
-                passwd = ""
+                passwd = False
             obj.save()
             CacheModule.editor(
                 request.user.id, obj, description, passwd
@@ -142,6 +146,9 @@ class PostlinkViewset(viewsets.ViewSet):
 
 
 class FastlinkViewset(viewsets.ViewSet):
+    def get_throttles(self):
+        return Throttle.choices_methods(self.action)
+
     def get_permissions(self):
         return Permissons.choices_methods(self.action)
 
@@ -155,6 +162,3 @@ class FastlinkViewset(viewsets.ViewSet):
             context = {"short_link": data, "long_link": long_link}
             return render(request, "fast_redirect.html", context=context)
         return redirect("https://e-lnk.ru/404")
-
-    #def handler404(request, exception):
-    #    return render(request, "email.html")

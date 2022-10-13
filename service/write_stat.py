@@ -10,12 +10,19 @@ class WriteStat:
     @staticmethod
     def one_week(day_week, usr) -> None:
         """Получение количества кликов по всем ссылкам пользователя"""
-        obj_stat_today = cache.get_many(cache.keys(f"statx_click_{usr[3]}_*"))
-        week_stat = {
-            f"week_{day_week}_{key}": values for (key, values) in obj_stat_today.items()
-        }
-        cache.set_many(week_stat, 1500000)
-        WriteStat.end_day(obj_stat_today, usr)
+        if day_week != 1:
+            day_week -= 1
+            obj_stat_today = cache.get_many(cache.keys(f"statx_click_{usr[3]}_*"))
+            week_stat = {
+                f"week_{day_week}_{key}": values
+                for (key, values) in obj_stat_today.items()
+            }
+            cache.set_many(week_stat, 1500000)
+            WriteStat.end_day(obj_stat_today, usr)
+        else:
+            for nums in range(1, 8):
+                cache.delete_pattern(f"ready_week_{nums}_{usr[3]}*")
+            WriteStat.end_day(False, usr)
 
     @staticmethod
     def one_hour() -> None:
