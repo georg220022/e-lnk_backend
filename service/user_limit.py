@@ -17,30 +17,21 @@ class UserLimit:
             #    cache.set(f"link_limit_{request_user.id}", int(obj), 2600000)
             cnt_lnk = CacheModule.count_lnk(request_user.id)
             if request_user.subs_type == "REG":
-                if int(cnt_lnk) < 100:
+                if int(cnt_lnk) < 75:
                     return True
                 cache.incr("server_user_reg_limit_lnk")
                 return {
-                    "error": "Лимит 100 ссылок, удалите не нужные"
-                    + "ссылки, кстати, сейчас идет открытое"
-                    + "бета-тестирование сайта, напишите нам на"
-                    + "почту и вам совершенно бесплатно увеличат"
-                    + "лимит до 500, навсегда"
+                    "error": "Лимит 75 ссылок, удалите не нужные"
                 }
             elif request_user.subs_type == "BTEST":
-                if cnt_lnk < 500:
+                if cnt_lnk < 150:
                     return True
                 cache.incr("server_user_btest_limit_lnk")
                 return {
-                    "error": "Для участников бета-тестирования" + "лимит 500 ссылок"
+                    "error": "Для участников бета-тестирования" + "лимит 150 ссылок"
                 }
             elif request_user.subs_type == "MOD":
                 return True
             cache.incr("server_try_create_lnk_ban_usr")
         else:
             return {"error": "Учетная запись заблокирована"}
-        return {
-            "error": "Ошибка 0LvQuNC80LjRgtGL, отправьте этот код "
-            + "на почту и опишите время получения этой ошибки "
-            + "и получите подарок от нашей команды"
-        }

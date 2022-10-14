@@ -48,8 +48,8 @@ class PostlinkViewset(viewsets.ViewSet):
                 limit = UserLimit.create_link(
                     request.user
                 )  # Проверяем тип подписки на аккаунте пользователя, для ограничения количества ссылок
-                if limit is not True:
-                    return Response(limit, status=status.HTTP_423_LOCKED)
+                if isinstance(limit, str) #limit is not True:
+                    return Response(limit, status=status.HTTP_400_BAD_REQUEST)
                 context = {
                     "user_id": request.user.id,
                     "long_link": long_link,

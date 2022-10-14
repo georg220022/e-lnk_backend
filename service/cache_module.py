@@ -159,7 +159,7 @@ class CacheModule:
             return int(cache.get(f"link_limit_{user_id}"))
         count_lnk = LinkRegUser.objects.filter(author_id=user_id).count()
         cache.set(f"link_limit_{user_id}", count_lnk, 2700000)
-        return int(cache.get(f"link_limit_{user_id}"))
+        return count_lnk #int(cache.get(f"link_limit_{user_id}"))
 
     @staticmethod
     def get_days_click_link(day_week, obj_id, obj_author_id):

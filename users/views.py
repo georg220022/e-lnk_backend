@@ -118,7 +118,7 @@ class RegistrationAPIView(APIView):
     ]
 
     def post(self, request: HttpRequest) -> Response:
-        if not cache.get("registrations_on_site"):
+        if cache.get("registrations_on_site"):
             eml_obj = request.data.get("email", False)
             if eml_obj:
                 if User.objects.filter(email=eml_obj).exists():
@@ -251,8 +251,8 @@ class UserSettings(viewsets.ViewSet):
             )
         if "timezone" in request.data:
             CacheModule.remove_stat_link(instance.id)
-        data.set_cookie("registration_elink", max_age=2592000)
         data = Response(status=status.HTTP_200_OK)
+        data.set_cookie("registration_elink", max_age=2592000)
         return data
 
     def get_delete_acc(self, request: HttpRequest) -> Response:
@@ -262,10 +262,7 @@ class UserSettings(viewsets.ViewSet):
             if user.check_password(user_pass):
                 user.delete()
                 CacheModule.remove_stat_link(user.id)
-                response = Response
-                response.delete_cookie()
-                response.status_code(status.HTTP_200_OK)
-                return response
+                return Response(status=status.HTTP_200_OK)
             else:
                 msg = "Пароль не верный"
         else:

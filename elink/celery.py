@@ -18,7 +18,7 @@ app.conf.beat_schedule = {
     # Так же высчитывает статистику если для некоторого пользователя слишком много кликов
     "optimize_ttl_and_perfomance": {
         "task": "service.tasks.optimize_ttl_and_perfomance",
-        "schedule": crontab(minute=5, hour=1),
+        "schedule": crontab(),
     },
     # Отправка полной статистики в telegram администраторам
     "send_admin_stat_tg": {
