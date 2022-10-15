@@ -68,9 +68,9 @@ P.p.s Мой хостинг стоит 350 рублей, выжимал что �
 ##### olgayugaj@gmail.com
 ```
 ![Design](https://img.shields.io/badge/Designer-UX%2FUI-brightgreen?style=for-the-badge)  
-```
+
 ##### [Behance:][https://www.behance.net/39lisenok06c7/appreciated]
-```
+
 ![BackEnd](https://img.shields.io/badge/Developer-BackEnd-brightgreen?style=for-the-badge)  
 ```
 Telegram: https://t.me/georg2022bcknd
