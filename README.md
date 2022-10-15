@@ -63,7 +63,7 @@ P.p.s Мой хостинг стоит 350 рублей, выжимал что �
 ##### GitHub: https://github.com/gleb-28
 ***
 ![QA](https://img.shields.io/badge/Engineer-QA-brightgreen?style=for-the-badge)  
-##### email: olgayugaj@gmail.com
+##### Email: olgayugaj@gmail.com
 ***
 ![Design](https://img.shields.io/badge/Designer-UX%2FUI-brightgreen?style=for-the-badge)  
 ##### Behance: https://www.behance.net/39lisenok06c7/appreciated
