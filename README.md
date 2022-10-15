@@ -59,7 +59,7 @@ P.p.s Мой хостинг стоит 350 рублей, выжимал что �
 ![Карта проекта](https://github.com/georg220022/e-lnk_backend/blob/main/images/example.png)
 ***  
 ### О авторе и проекте:  
-
+![Гостевая страница](https://img.shields.io/badge/-BackEnd-brightgreen)
 Telegram: https://t.me/georg2022bcknd
 Email: info@e-lnk.ru
 GitHub: georg220022  
