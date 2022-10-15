@@ -68,7 +68,7 @@ P.p.s Мой хостинг стоит 350 рублей, выжимал что �
 ##### olgayugaj@gmail.com
 ```
 ![Design](https://img.shields.io/badge/Designer-UX%2FUI-brightgreen?style=for-the-badge)  
-##### <p><a href="[http://www.yandex.ru](https://www.behance.net/39lisenok06c7/appreciated)">Behance</a></p>  
+<p><a href="[http://www.yandex.ru](https://www.behance.net/39lisenok06c7/appreciated)">Behance</a></p>  
 
 ![BackEnd](https://img.shields.io/badge/Developer-BackEnd-brightgreen?style=for-the-badge)  
 ```
