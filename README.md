@@ -1,4 +1,5 @@
 ## E-LNK.RU 
+![Image text](https://github.com/georg220022/e-lnk_backend/blob/main/images/%D0%9F%D0%B0%D0%BD%D0%B5%D0%BB%D1%8C_1.png)
 #### Сервис сокращения ссылок с последующим сбором и обработкой статистики в реальном времени.
 
 #### Что сервис делает:
