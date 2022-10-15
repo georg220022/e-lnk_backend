@@ -58,11 +58,14 @@ P.p.s Мой хостинг стоит 350 рублей, выжимал что �
 ##### Django 4, DRF, Redis, PostgresSQL, Docker, Python 3, Nginx, Gunicorn, Locust, Ubuntu-server, Celery, Pytest, Flower, Telegram API
 ![Карта проекта](https://github.com/georg220022/e-lnk_backend/blob/main/images/example.png)
 ***  
-### О авторе и проекте:  
-![Гостевая страница](https://img.shields.io/badge/-BackEnd-brightgreen)
+## О команде и проекте:  
+![FrontEnd](https://img.shields.io/badge/DEVELOPER-FronEnd-brightgreen?style=for-the-badge)  
+![QA](https://img.shields.io/badge/Engineer-QA-brightgreen?style=for-the-badge)
+![Design](https://img.shields.io/badge/Designer-UX%2FUI-brightgreen?style=for-the-badge)
+![BackEnd](https://img.shields.io/badge/sdfsdf-BackEnd-brightgreen?style=for-the-badge)
 Telegram: https://t.me/georg2022bcknd
-Email: info@e-lnk.ru
 GitHub: georg220022  
+
 
 Сервис содержит более 3500 строк python кода, на разработку ушло около 3-х месяцев.
 При разработке проекта не следовал слепо принципам таким как RESTful или DRY, если в тех или иных моментах выгодно было их нарушить - нарушал.
