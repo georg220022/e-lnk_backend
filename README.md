@@ -59,7 +59,7 @@ P.p.s Мой хостинг стоит 350 рублей, выжимал что �
 ![Карта проекта](https://github.com/georg220022/e-lnk_backend/blob/main/images/example.png)
 ***  
 # Команда проекта:  
-![FrontEnd](https://img.shields.io/badge/DEVELOPER-FronEnd-brightgreen?style=for-the-badge)  
+![FrontEnd](https://img.shields.io/badge/DEVELOPER-FrontEnd-brightgreen?style=for-the-badge)  
 ##### GitHub: https://github.com/gleb-28
 ***
 ![QA](https://img.shields.io/badge/Engineer-QA-brightgreen?style=for-the-badge)  
