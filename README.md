@@ -61,20 +61,21 @@ P.p.s Мой хостинг стоит 350 рублей, выжимал что �
 ## О команде и проекте:  
 ![FrontEnd](https://img.shields.io/badge/DEVELOPER-FronEnd-brightgreen?style=for-the-badge)  
 ```
-https://github.com/gleb-28
+##### https://github.com/gleb-28
 ```
 ![QA](https://img.shields.io/badge/Engineer-QA-brightgreen?style=for-the-badge)  
 ```
-olgayugaj@gmail.com
+##### olgayugaj@gmail.com
 ```
 ![Design](https://img.shields.io/badge/Designer-UX%2FUI-brightgreen?style=for-the-badge)  
 ```
-https://www.behance.net/39lisenok06c7/appreciated
+##### [Behance:][https://www.behance.net/39lisenok06c7/appreciated]
 ```
 ![BackEnd](https://img.shields.io/badge/Developer-BackEnd-brightgreen?style=for-the-badge)  
+```
 Telegram: https://t.me/georg2022bcknd
 GitHub: georg220022  
-
+```  
 
 Сервис содержит более 3500 строк python кода, на разработку ушло около 3-х месяцев.
 При разработке проекта не следовал слепо принципам таким как RESTful или DRY, если в тех или иных моментах выгодно было их нарушить - нарушал.
