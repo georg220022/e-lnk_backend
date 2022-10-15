@@ -56,6 +56,7 @@ P.p.s Мой хостинг стоит 350 рублей, выжимал что �
 ***
 ### Технологии:
 ##### Django 4, DRF, Redis, PostgresSQL, Docker, Python 3, Nginx, Gunicorn, Locust, Ubuntu-server, Celery, Pytest, Flower, Telegram API
+![Карта проекта](https://github.com/georg220022/e-lnk_backend/blob/main/images/example.png)
 ***  
 ### О авторе и проекте:  
 
