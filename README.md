@@ -58,12 +58,22 @@ P.p.s Мой хостинг стоит 350 рублей, выжимал что �
 ##### Django 4, DRF, Redis, PostgresSQL, Docker, Python 3, Nginx, Gunicorn, Locust, Ubuntu-server, Celery, Pytest, Flower, Telegram API
 ![Карта проекта](https://github.com/georg220022/e-lnk_backend/blob/main/images/example.png)
 ***  
-### О авторе и проекте:  
-
-Telegram: https://t.me/georg2022bcknd
-Email: info@e-lnk.ru
-GitHub: georg220022  
-
+# Команда проекта:  
+![FrontEnd](https://img.shields.io/badge/DEVELOPER-FrontEnd-brightgreen?style=for-the-badge)  
+##### GitHub: https://github.com/gleb-28
+***
+![QA](https://img.shields.io/badge/Engineer-QA-brightgreen?style=for-the-badge)  
+##### Email: olgayugaj@gmail.com
+***
+![Design](https://img.shields.io/badge/Designer-UX%2FUI-brightgreen?style=for-the-badge)  
+##### Behance: https://www.behance.net/39lisenok06c7/appreciated  
+##### Telegram: https://t.me/lisenok_39  
+***
+![BackEnd](https://img.shields.io/badge/Developer-BackEnd-brightgreen?style=for-the-badge)  
+##### Telegram: https://t.me/georg2022bcknd
+##### GitHub: https://github.com/georg220022  
+***  
+#### О проекте:  
 Сервис содержит более 3500 строк python кода, на разработку ушло около 3-х месяцев.
 При разработке проекта не следовал слепо принципам таким как RESTful или DRY, если в тех или иных моментах выгодно было их нарушить - нарушал.
 Код сервиса рассчитан на большие нагрузки, корректность подсчета проверена "синтетическим" тестом, в данный момент все упирается в железо сервера, всего 1 ядро отвечает вообще за все :)  
@@ -82,3 +92,5 @@ GitHub: georg220022
 ![Настройка ссылки](https://github.com/georg220022/e-lnk_backend/blob/main/images/%D1%81%D0%BC%D0%B5%D0%BD%D0%B0_%D0%B8%D0%BC%D0%B5%D0%BD%D0%B8_%D0%B8_%D0%BF%D0%B0%D1%80%D0%BE%D0%BB%D1%8F.png)
 ***
 ![Добавление ссылки](https://github.com/georg220022/e-lnk_backend/blob/main/images/%D1%81%D0%BE%D0%B7%D0%B4%D0%B0%D0%BD%D0%B8%D0%B5%20%D1%81%D1%81%D1%8B%D0%BB%D0%BA%D0%B8.png)
+***
+![Ежесуточный отчет админам](https://github.com/georg220022/e-lnk_backend/blob/main/images/tg1.png)
