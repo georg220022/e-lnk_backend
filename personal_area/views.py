@@ -8,6 +8,8 @@ from elink_index.models import InfoLink
 from django.core.cache import cache
 from rest_framework import status
 from django.http import HttpRequest
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample, OpenApiResponse
+from drf_spectacular.types import OpenApiTypes
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +17,39 @@ logger = logging.getLogger(__name__)
 class PersonalStat(viewsets.ViewSet):
     def get_permissions(self):
         return (permissions.IsAuthenticated(),)
-
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="email",
+                type=str,
+                required=True,
+                location=OpenApiParameter.QUERY,
+                description="Email от аккаунта",
+                examples=[
+                    OpenApiExample(
+                    "Пример 1",
+                    summary="Почта",
+                    # description="Пароль от аккаунта",
+                    value="email_you_account"
+                    ),
+                ],
+            ),
+        ],
+        responses={
+                200: OpenApiResponse(),
+                400: OpenApiResponse(description="{'error': Тут будет сообщение об ошибке}"),
+            },
+        request=OpenApiTypes.OBJECT,
+        description="API отвечающий за сброс пароля",
+        auth=None,
+        operation_id=False,
+        operation=None,
+        examples=[
+            OpenApiExample(
+                "Смена timezone",
+                value = {"password": "YOU_PASS", "timezone": "+3"})
+        ],
+    )
     def get_full_stat(self, request: HttpRequest) -> Response:
         old_data = cache.get(request.user.id)
         if old_data:

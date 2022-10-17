@@ -16,3 +16,4 @@ django-cors-headers
 psutil
 python-telegram-bot
 locust
+drf-spectacular

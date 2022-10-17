@@ -15,6 +15,8 @@ from .throttle import Throttle_create_link as Throttle
 from .serializer import LinkAuthSerializer
 from service.validators import CheckLink
 from .permissions import Permissons
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample, OpenApiResponse
+from drf_spectacular.types import OpenApiTypes
 
 
 class PostlinkViewset(viewsets.ViewSet):
@@ -24,6 +26,22 @@ class PostlinkViewset(viewsets.ViewSet):
     def get_throttles(self):
         return Throttle.choices_methods(self.action)
 
+    @extend_schema(
+        responses={
+                200: OpenApiResponse(),
+                400: OpenApiResponse(description="{'error': Тут будет сообщение об ошибке}"),
+            },
+        request=OpenApiTypes.OBJECT,
+        description="API отвечающий за создание ссылки"
+        auth=None,
+        operation_id=False,
+        operation=None,
+        examples=[
+            OpenApiExample(
+                "Смена timezone",
+                value = {"password": "YOU_PASS"}),
+        ],
+    )
     def create_link(self, request: HttpRequest) -> Response:
         """Создание ссылки со всеми сопутствующими проверками"""
         long_link = CheckLink.get_long_url(
@@ -71,6 +89,22 @@ class PostlinkViewset(viewsets.ViewSet):
         }
         return Response(data, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(
+        responses={
+                200: OpenApiResponse(),
+                400: OpenApiResponse(description="{'error': Тут будет сообщение об ошибке}"),
+            },
+        request=OpenApiTypes.OBJECT,
+        description="API отвечающий за удаление ссылки"
+        auth=None,
+        operation_id=False,
+        operation=None,
+        examples=[
+            OpenApiExample(
+                "Смена timezone",
+                value = {"password": "YOU_PASS"}),
+        ],
+    )
     def delete_link(self, request: HttpRequest) -> Response:
         """Удаляем ссылки из базы и так же записи о них из кеша"""
         short_links = request.data.get("shortLinks", False)
@@ -105,6 +139,22 @@ class PostlinkViewset(viewsets.ViewSet):
         )
         return Response(msg, status=status.HTTP_403_FORBIDDEN)
 
+    @extend_schema(
+        responses={
+                200: OpenApiResponse(),
+                400: OpenApiResponse(description="{'error': Тут будет сообщение об ошибке}"),
+            },
+        request=OpenApiTypes.OBJECT,
+        description="API отвечающий за обновление пароля или имени на ссылке"
+        auth=None,
+        operation_id=False,
+        operation=None,
+        examples=[
+            OpenApiExample(
+                "Смена timezone",
+                value = {"password": "YOU_PASS"}),
+        ],
+    )
     def update_descrip_or_pass_lnk(self, request: HttpRequest) -> Response:
         """Обновление описания и/или пароля(так же обновляется в кеше для правильного отображения, если есть кешированные данные)"""
         obj = CheckLink.description_or_pass(
@@ -152,6 +202,22 @@ class FastlinkViewset(viewsets.ViewSet):
     def get_permissions(self):
         return Permissons.choices_methods(self.action)
 
+    @extend_schema(
+        responses={
+                200: OpenApiResponse(),
+                400: OpenApiResponse(description="{'error': Тут будет сообщение об ошибке}"),
+            },
+        request=OpenApiTypes.OBJECT,
+        description="API отвечающий за создание быстрой ссылки ozon, ali, wilberries"
+        auth=None,
+        operation_id=False,
+        operation=None,
+        examples=[
+            OpenApiExample(
+                "Смена timezone",
+                value = {"password": "YOU_PASS"}),
+        ],
+    )
     def create_link(self, request: HttpRequest, site: str) -> Response:
         """Создание быстрой ссылки через 'ee' на ali, ozon, wildberries"""
         long_code = request.META.get("HTTP_MY_URL", False)

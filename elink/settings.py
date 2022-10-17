@@ -105,6 +105,7 @@ INSTALLED_APPS = [
     "elink_index",
     "personal_area",
     "service",
+    "drf_spectacular",
 ]
 
 MIDDLEWARE = [
@@ -207,6 +208,7 @@ REST_FRAMEWORK = {
         "pass_open_anon": "50/hour",
         "pass_open_user": "100/hour",
     },
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 CACHES = {
@@ -228,6 +230,14 @@ SIMPLE_JWT = {
     "UPDATLAST_LOGIN": False,
     "USER_ID_FIELD": "public_key",
     #"JTI_CLAIM": "jti", было включено
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'E-lnk.ru API',
+    'DESCRIPTION': 'Сервис создания коротких ссылок',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    # OTHER SETTINGS
 }
 
 JAZZMIN_UI_TWEAKS = {

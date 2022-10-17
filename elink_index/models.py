@@ -29,7 +29,7 @@ class LinkRegUser(models.Model):
     # количество переходов по ссылке
     limited_link = models.IntegerField(default=-1, blank=True, verbose_name="Лимит")
     # пароль на ссылку
-    secure_link = models.CharField(blank=True, max_length=10, verbose_name="Пароль")
+    secure_link = models.CharField(blank=True, max_length=16, verbose_name="Пароль")
     # с какой даты ссылка активна
     start_link = models.DateTimeField(blank=True, null=True, verbose_name="Начало")
     # дата остановки доступа к ссылке

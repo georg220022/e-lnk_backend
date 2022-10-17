@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
+from .drf_spectacular import urlpatterns as data_url
 
 
 urlpatterns = [
@@ -10,6 +11,8 @@ urlpatterns = [
     path("api/v1", include("users.urls")),
     path("api/v1/panel", include("personal_area.urls")),
 ]
+
+urlpatterns += data_url
 
 handler404 = "service.handlers.handler404"
 # handler500 = "service.handlers.handler500"
