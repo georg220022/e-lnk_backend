@@ -197,6 +197,22 @@ class EntersOnSite(viewsets.ViewSet):
     def get_permissions(self):
         return (permissions.AllowAny(),)
 
+    @extend_schema(
+        responses={
+                200: OpenApiResponse(),
+                400: OpenApiResponse(description="{'error': Тут будет сообщение об ошибке}"),
+            },
+        request=OpenApiTypes.OBJECT,
+        description="API отвечающий за регистрацию, timezone от '-12' до '+12' включительно, в видестроки"
+        auth=None,
+        operation_id=False,
+        operation=None,
+        examples=[
+            OpenApiExample(
+                "Смена timezone",
+                value = {"password": "YOU_PASS"}),
+        ],
+    )
     def get_logout(self, request):
         data = Response(status=status.HTTP_200_OK)
         # data.set_cookie("refresh", '1', max_age=0)
@@ -204,6 +220,22 @@ class EntersOnSite(viewsets.ViewSet):
         cache.incr("server_logout_account")
         return data
 
+    @extend_schema(
+        responses={
+                200: OpenApiResponse(),
+                400: OpenApiResponse(description="{'error': Тут будет сообщение об ошибке}"),
+            },
+        request=OpenApiTypes.OBJECT,
+        description="API отвечающий за регистрацию, timezone от '-12' до '+12' включительно, в видестроки"
+        auth=None,
+        operation_id=False,
+        operation=None,
+        examples=[
+            OpenApiExample(
+                "Смена timezone",
+                value = {"password": "YOU_PASS"}),
+        ],
+    )
     def get_enter(self, request: HttpRequest) -> Response:
         if len(request.data) == 2:
             email = request.data.get("email", False)
@@ -469,6 +501,22 @@ class UserSettings(viewsets.ViewSet):
             msg = "Пароль должен быть строкой"
         return Response(msg, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(
+        responses={
+                200: OpenApiResponse(),
+                400: OpenApiResponse(description="{'error': Тут будет сообщение об ошибке}"),
+            },
+        request=OpenApiTypes.OBJECT,
+        description="API отвечающий за регистрацию, timezone от '-12' до '+12' включительно, в видестроки",
+        auth=None,
+        operation_id=False,
+        operation=None,
+        examples=[
+            OpenApiExample(
+                "Смена timezone",
+                value = {"password": "YOU_PASS"}),
+        ],
+    )
     def get_settings(self, request: HttpRequest) -> Response:
         user = User.objects.get(id=request.user.id)
         obj = {

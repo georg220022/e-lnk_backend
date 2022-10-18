@@ -32,7 +32,7 @@ class PostlinkViewset(viewsets.ViewSet):
                 400: OpenApiResponse(description="{'error': Тут будет сообщение об ошибке}"),
             },
         request=OpenApiTypes.OBJECT,
-        description="API отвечающий за создание ссылки"
+        description="API отвечающий за создание ссылки",    
         auth=None,
         operation_id=False,
         operation=None,
@@ -66,7 +66,7 @@ class PostlinkViewset(viewsets.ViewSet):
                 limit = UserLimit.create_link(
                     request.user
                 )  # Проверяем тип подписки на аккаунте пользователя, для ограничения количества ссылок
-                if isinstance(limit, str) #limit is not True:
+                if isinstance(limit, str): #limit is not True:
                     return Response(limit, status=status.HTTP_400_BAD_REQUEST)
                 context = {
                     "user_id": request.user.id,
@@ -95,7 +95,7 @@ class PostlinkViewset(viewsets.ViewSet):
                 400: OpenApiResponse(description="{'error': Тут будет сообщение об ошибке}"),
             },
         request=OpenApiTypes.OBJECT,
-        description="API отвечающий за удаление ссылки"
+        description="API отвечающий за удаление ссылки",
         auth=None,
         operation_id=False,
         operation=None,
@@ -145,7 +145,7 @@ class PostlinkViewset(viewsets.ViewSet):
                 400: OpenApiResponse(description="{'error': Тут будет сообщение об ошибке}"),
             },
         request=OpenApiTypes.OBJECT,
-        description="API отвечающий за обновление пароля или имени на ссылке"
+        description="API отвечающий за обновление пароля или имени на ссылке",
         auth=None,
         operation_id=False,
         operation=None,
@@ -208,7 +208,7 @@ class FastlinkViewset(viewsets.ViewSet):
                 400: OpenApiResponse(description="{'error': Тут будет сообщение об ошибке}"),
             },
         request=OpenApiTypes.OBJECT,
-        description="API отвечающий за создание быстрой ссылки ozon, ali, wilberries"
+        description="API отвечающий за создание быстрой ссылки ozon, ali, wilberries",
         auth=None,
         operation_id=False,
         operation=None,

@@ -22,7 +22,7 @@ from drf_spectacular.types import OpenApiTypes
                 400: OpenApiResponse(description="{'error': Тут будет сообщение об ошибке}"),
             },
         request=OpenApiTypes.OBJECT,
-        description="API отвечающий за регистрацию, timezone от '-12' до '+12' включительно, в видестроки"
+        description="API отвечающий за регистрацию, timezone от '-12' до '+12' включительно, в видестроки",
         auth=None,
         operation_id=False,
         operation=None,
