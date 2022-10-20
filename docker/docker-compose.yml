@@ -4,7 +4,7 @@ services:
   redis_db:
     container_name: redis_db
     image: redis
-    command: redis-server --requirepass 'dyVsS30yJQT7k1sYI0XEI1ZNHRbQWQKFhCVrtvcjyfEWowYsknLc5R1Lr8DwFqa6QJSKyKXaav9P9JLW'
+    command: redis-server --requirepass 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
     restart: always
     volumes:
       - redis_data:/var/lib/redis/data
@@ -85,7 +85,7 @@ services:
     image: mher/flower
     env_file:
       - .env
-    command: celery flower --basic_auth=georg_admin:GM9CWoCJnHaHfDwMw376
+    command: celery flower --basic_auth=XXXXXXXXXX:XXXXXXXXXXX
     ports:  
       - 8888:8888
     depends_on:
