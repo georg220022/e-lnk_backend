@@ -1,22 +1,28 @@
+from typing import Union
 from django.core.cache import cache
 from django.db.models import Q
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest
 from django.shortcuts import redirect, render
-from rest_framework import status, viewsets, permissions
+from rest_framework import status, viewsets
 from rest_framework.response import Response
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    extend_schema,
+    OpenApiParameter,
+    OpenApiExample,
+    OpenApiResponse,
+)
 
 from elink_index.models import LinkRegUser
 from service.read_write_base import RedisLink
 from service.cache_module import CacheModule
 from service.server_stat import ServerStat
 from service.user_limit import UserLimit
+from service.validators import CheckLink
 
 from .throttle import Throttle_create_link as Throttle
 from .serializer import LinkAuthSerializer
-from service.validators import CheckLink
 from .permissions import Permissons
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample, OpenApiResponse
-from drf_spectacular.types import OpenApiTypes
 
 
 class PostlinkViewset(viewsets.ViewSet):
@@ -27,19 +33,59 @@ class PostlinkViewset(viewsets.ViewSet):
         return Throttle.choices_methods(self.action)
 
     @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="longLink",
+                type=str,
+                required=True,
+                description="Длинная ссылка",
+            ),
+            OpenApiParameter(
+                name="linkName",
+                type=str,
+                required=False,
+                description="Отображаемое имя ссылки",
+            ),
+            OpenApiParameter(
+                name="linkLimit",
+                type=int,
+                required=False,
+                description="Лимит переходов по ссылке",
+            ),
+            OpenApiParameter(
+                name="linkStartDate",
+                type=str,
+                required=False,
+                description="С какого момента ссылка станет активной",
+            ),
+            OpenApiParameter(
+                name="linkEndDate",
+                type=str,
+                required=False,
+                description="С какого момента ссылка перестанет быть активной",
+            ),
+            OpenApiParameter(
+                name="linkPassword",
+                type=str,
+                required=False,
+                description="Пароль для ссылки",
+            ),
+        ],
         responses={
-                200: OpenApiResponse(),
+                200: OpenApiResponse(description="{'longLink': 'https://ozon.ru', 'shortLink': 'e-lnk.ru/hzwAin93Our', 'qr': 'BASE64_QR_CODE'}"),
                 400: OpenApiResponse(description="{'error': Тут будет сообщение об ошибке}"),
             },
         request=OpenApiTypes.OBJECT,
-        description="API отвечающий за создание ссылки"
+        description="API отвечающий за создание ссылки",
         auth=None,
         operation_id=False,
         operation=None,
         examples=[
             OpenApiExample(
-                "Смена timezone",
-                value = {"password": "YOU_PASS"}),
+                "Создание ссылки",
+                value = {"longLink": "https://ozon.ru", "linkPassword": "qwerty123",
+                         "linkName": "Ссылка на наушники", "linkLimit": 100,
+                         "linkStartDate": "2022-10-27T05:15:00+03", "linkEndDate": "2022-11-27T05:15:00+03"}),
         ],
     )
     def create_link(self, request: HttpRequest) -> Response:
@@ -65,8 +111,8 @@ class PostlinkViewset(viewsets.ViewSet):
             else:
                 limit = UserLimit.create_link(
                     request.user
-                )  # Проверяем тип подписки на аккаунте пользователя, для ограничения количества ссылок
-                if isinstance(limit, str) #limit is not True:
+                )  # Проверяем тип подписки на аккаунте пользователя, для ограничения количества ссылоk
+                if isinstance(limit, dict):  # limit is not True:
                     return Response(limit, status=status.HTTP_400_BAD_REQUEST)
                 context = {
                     "user_id": request.user.id,
@@ -89,22 +135,6 @@ class PostlinkViewset(viewsets.ViewSet):
         }
         return Response(data, status=status.HTTP_400_BAD_REQUEST)
 
-    @extend_schema(
-        responses={
-                200: OpenApiResponse(),
-                400: OpenApiResponse(description="{'error': Тут будет сообщение об ошибке}"),
-            },
-        request=OpenApiTypes.OBJECT,
-        description="API отвечающий за удаление ссылки"
-        auth=None,
-        operation_id=False,
-        operation=None,
-        examples=[
-            OpenApiExample(
-                "Смена timezone",
-                value = {"password": "YOU_PASS"}),
-        ],
-    )
     def delete_link(self, request: HttpRequest) -> Response:
         """Удаляем ссылки из базы и так же записи о них из кеша"""
         short_links = request.data.get("shortLinks", False)
@@ -139,22 +169,6 @@ class PostlinkViewset(viewsets.ViewSet):
         )
         return Response(msg, status=status.HTTP_403_FORBIDDEN)
 
-    @extend_schema(
-        responses={
-                200: OpenApiResponse(),
-                400: OpenApiResponse(description="{'error': Тут будет сообщение об ошибке}"),
-            },
-        request=OpenApiTypes.OBJECT,
-        description="API отвечающий за обновление пароля или имени на ссылке"
-        auth=None,
-        operation_id=False,
-        operation=None,
-        examples=[
-            OpenApiExample(
-                "Смена timezone",
-                value = {"password": "YOU_PASS"}),
-        ],
-    )
     def update_descrip_or_pass_lnk(self, request: HttpRequest) -> Response:
         """Обновление описания и/или пароля(так же обновляется в кеше для правильного отображения, если есть кешированные данные)"""
         obj = CheckLink.description_or_pass(
@@ -202,23 +216,8 @@ class FastlinkViewset(viewsets.ViewSet):
     def get_permissions(self):
         return Permissons.choices_methods(self.action)
 
-    @extend_schema(
-        responses={
-                200: OpenApiResponse(),
-                400: OpenApiResponse(description="{'error': Тут будет сообщение об ошибке}"),
-            },
-        request=OpenApiTypes.OBJECT,
-        description="API отвечающий за создание быстрой ссылки ozon, ali, wilberries"
-        auth=None,
-        operation_id=False,
-        operation=None,
-        examples=[
-            OpenApiExample(
-                "Смена timezone",
-                value = {"password": "YOU_PASS"}),
-        ],
-    )
-    def create_link(self, request: HttpRequest, site: str) -> Response:
+
+    def create_link(self, request: HttpRequest, site: str) -> Union[render, redirect]:
         """Создание быстрой ссылки через 'ee' на ali, ozon, wildberries"""
         long_code = request.META.get("HTTP_MY_URL", False)
         if long_code and len(long_code) < 5001:

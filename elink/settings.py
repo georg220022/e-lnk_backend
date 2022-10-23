@@ -1,8 +1,9 @@
 import os
 import redis
+
 from pathlib import Path
 from dotenv import load_dotenv
-from datetime import timedelta
+from datetime import timedelta, datetime
 from django.core.cache import cache
 
 load_dotenv()
@@ -13,7 +14,9 @@ TG_CHAT_DATA = [
     os.getenv("TELEGRAM_CHAT_3"),
 ]
 
-CSRF_TRUSTED_ORIGINS = ["https://e-lnk.ru", ]
+CSRF_TRUSTED_ORIGINS = [
+    "https://e-lnk.ru",
+]
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 
@@ -123,7 +126,9 @@ if DEBUG:
         "debug_toolbar.middleware.DebugToolbarMiddleware",
         "debug_toolbar_force.middleware.ForceDebugToolbarMiddleware",
     ]
-    INSTALLED_APPS += ["debug_toolbar",]
+    INSTALLED_APPS += [
+        "debug_toolbar",
+    ]
 
 ROOT_URLCONF = "elink.urls"
 
@@ -198,10 +203,10 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.AnonRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "user": "1200/hour",
-        "anon": "600/hour",
-        "create_link_user": "500/hour",
-        "create_link_anonym": "150/hour",
+        "user": "120000/hour",
+        "anon": "60000000/hour",
+        "create_link_user": "500000/hour",
+        "create_link_anonym": "1000050/hour",
         "user_pass_try": "50/hour",
         "anon_pass_try": "50/hour",
         "anon_registration": "10/hour",
@@ -225,19 +230,19 @@ CACHES = {
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=int(ACCESS_TIME)),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=int(REFRESH_TIME)),
-    "ROTATE_REFRESH_TOKENS": False, # Было тру
-    "BLACKLIST_AFTER_ROTATION": False, # Было тру
+    "ROTATE_REFRESH_TOKENS": False,
+    "BLACKLIST_AFTER_ROTATION": False,
     "UPDATLAST_LOGIN": False,
     "USER_ID_FIELD": "public_key",
-    #"JTI_CLAIM": "jti", было включено
+    # "JTI_CLAIM": "jti"
 }
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'E-lnk.ru API',
-    'DESCRIPTION': 'Сервис создания коротких ссылок',
-    'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': False,
-    # OTHER SETTINGS
+    "TITLE": "E-lnk.ru API",
+    "DESCRIPTION": "Для получания примера JSON ответов - авторизуйтесь под своим логином/паролем, полученный ключ в ответе вставьте в Authorize",
+    "VERSION": "0.0.521",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "PREPROCESSING_HOOKS": ["elink.drf_spec_hook.exclude_path_format"],
 }
 
 JAZZMIN_UI_TWEAKS = {
@@ -258,9 +263,12 @@ JAZZMIN_SETTINGS = {
     "search_model": "users.User",
     "user_avatar": None,
     "topmenu_links": [
-        {"name": "Написать разработчику", "url": "https://t.me/georg2022bcknd", "new_window": True},
+        {
+            "name": "Написать разработчику",
+            "url": "https://t.me/georg2022bcknd",
+            "new_window": True,
+        },
         {"name": "Открыть сайт", "url": "https://e-lnk.ru", "new_window": True},
-
     ],
     "show_sidebar": True,
     "navigation_expanded": True,
@@ -276,11 +284,14 @@ JAZZMIN_SETTINGS = {
     "custom_js": None,
     "show_ui_builder": False,
     "changeform_format": "horizontal_tabs",
-    "changeform_format_overrides": {"auth.user": "collapsible", "auth.group": "vertical_tabs"},
+    "changeform_format_overrides": {
+        "auth.user": "collapsible",
+        "auth.group": "vertical_tabs",
+    },
     "language_chooser": False,
 }
 
-ADMINS = [ ('Georg', 'help@e-lnk.ru') ]
+ADMINS = [("Georg", "help@e-lnk.ru")]
 
 LOGGING = {
     "version": 1,
@@ -299,8 +310,8 @@ LOGGING = {
             "formatter": "default_format",
         },
         "mail_admins": {
-            "level": 'ERROR',
-            "class": 'django.utils.log.AdminEmailHandler',
+            "level": "ERROR",
+            "class": "django.utils.log.AdminEmailHandler",
             "include_html": True,
         },
     },
@@ -315,55 +326,57 @@ LOGGING = {
 # cache.clear()
 # Техническая информация для отправки в telegram администратора(ов) ( Prometheus для бедных xD )
 stat_data = {
-    "server_no_long_link": 0, # Не верная длина ссылки
-    "server_check_pass": 0, # Обращение к ссылке с паролем
-    "server_open_bad_time": 0, # Открытий ссылки с истекшим сроком
-    "server_bad_data": 0, # Сколько раз не получен "shortCode" и-или "linkPassword"
-    "server_bad_edit_descrip": 0, # Сколько раз не верно изменили описание
-    "server_bad_try_create_user_link": 0, # Попыток создания ссылки без активированной учетной записи
-    "server_bad_valid_serializer_create_link": 0, # Не прошло валидацию создание ссылки от юзера
-    "server_bad_delete_link": 0, # Плохих попыток удаления ссылки
-    "server_bad_update_desrip_link": 0, # Плохих попыток изменить описание
-    "server_redis_redirect": 0, # Переходов по Redis ссылке (гостевой)
-    "server_open_bad_link": 0, # Попыток открыть не существующие ссылки
-    "server_bad_input_pass": 0, # Не верных вводов пароля
-    "server_good_input_pass": 0, # Верных вводов пароля
-    "server_empty_pass_open_lnk": 0, # Пришло пустых паролей
-    "server_get_stat_in_cache": 0, # Сколько раз взяли статистику панели из кеша
-    "server_get_stat_in_serializer": 0, # Сколько раз взяли статистику НЕ из кеша
-    "server_unknown_coutry": 0, # Не удалось определить страну
-    "server_redis_atribute_error": 0, # Взять из базы редиса не существующую ссылку
-    "server_redis_index_error": 0, # Взять из базы редиса не существующую ссылку
-    "server_pstgrs_obj_doesnt_exist": 0, # Взять из базы постгреса не существующую ссылку
-    "server_bad_send_pdf_day_stat": 0, # Не удачных отправок ежедневной статы
-    "server_need_clear_cache": 0, # Досрочных запросов на запись кликов из кеша в БД
-    "server_user_reg_limit_lnk": 0, # Сколько разполучено сообщение о лимите ссылок обычному юзеру
-    "server_user_btest_limit_lnk": 0, # Сколько разполучено сообщение о лимите ссылок бетатестерам
-    "server_try_create_lnk_ban_usr": 0, # Попыток оздаь ссылку забаннным юзеом
-    "serveстерr_bad_try_update_refresh": 0, # Неудачных попыток обновить refresh token
-    "server_bad_change_pass": 0, # Неудачных попыток сменить пароль
-    "server_good_change_pass": 0, # Удачно смененные пароли
-    "server_error_register": 0, # Ошибок при регистрации
-    "server_logout_account": 0, # Логаутов из аккаунта
-    "server_enter_notfound_email": 0, # Попыток входа с несуществующим емейлом
-    "server_guest_link": 0, # Количество ссылок от гостей
-    "server_delete_link": 0, # Ссылок удалено пользователями
-    "server_update_desrip_link": 0, # Обновлено описаний
-    "server_new_users": 0, # Новых пользователей
-    "server_send_msg_email": 0, # Отправлено активаций
-    "server_activated": 0, # Активированно аккаунтов
-    "server_reg_link": 0, # Количество ссылок от зарегестрированных юзеров
-    "server_redirect": 0, # Переходов за сегодня
-    "server_refresh_tokens":  0, # Обновлено токенов
-    "server_good_enter": 0, # Входов в аккаунт удачных (ввести логин-пароль)
-    "server_bad_enter": 0, # Входов в аккаунт НЕ удачных (ввести логин-пароль)
-    "server_bad_try_activated": 0, # Неудачных попыток активации
-    "server_time_generate_all_pdf": ["Генерация отчетов"], # Время генерации отчетов + очистка данных
-    "server_time_send_pdf": ["Рассылка отчетов"], # Время рассылки всех сообщений
+    "server_no_long_link": 0,  # Не верная длина ссылки
+    "server_check_pass": 0,  # Обращение к ссылке с паролем
+    "server_open_bad_time": 0,  # Открытий ссылки с истекшим сроком
+    "server_bad_data": 0,  # Сколько раз не получен "shortCode" и-или "linkPassword"
+    "server_bad_edit_descrip": 0,  # Сколько раз не верно изменили описание
+    "server_bad_try_create_user_link": 0,  # Попыток создания ссылки без активированной учетной записи
+    "server_bad_valid_serializer_create_link": 0,  # Не прошло валидацию создание ссылки от юзера
+    "server_bad_delete_link": 0,  # Плохих попыток удаления ссылки
+    "server_bad_update_desrip_link": 0,  # Плохих попыток изменить описание
+    "server_redis_redirect": 0,  # Переходов по Redis ссылке (гостевой)
+    "server_open_bad_link": 0,  # Попыток открыть не существующие ссылки
+    "server_bad_input_pass": 0,  # Не верных вводов пароля
+    "server_good_input_pass": 0,  # Верных вводов пароля
+    "server_empty_pass_open_lnk": 0,  # Пришло пустых паролей
+    "server_get_stat_in_cache": 0,  # Сколько раз взяли статистику панели из кеша
+    "server_get_stat_in_serializer": 0,  # Сколько раз взяли статистику НЕ из кеша
+    "server_unknown_coutry": 0,  # Не удалось определить страну
+    "server_redis_atribute_error": 0,  # Взять из базы редиса не существующую ссылку
+    "server_redis_index_error": 0,  # Взять из базы редиса не существующую ссылку
+    "server_pstgrs_obj_doesnt_exist": 0,  # Взять из базы постгреса не существующую ссылку
+    "server_bad_send_pdf_day_stat": 0,  # Не удачных отправок ежедневной статы
+    "server_need_clear_cache": 0,  # Досрочных запросов на запись кликов из кеша в БД
+    "server_user_reg_limit_lnk": 0,  # Сколько разполучено сообщение о лимите ссылок обычному юзеру
+    "server_user_btest_limit_lnk": 0,  # Сколько разполучено сообщение о лимите ссылок бетатестерам
+    "server_try_create_lnk_ban_usr": 0,  # Попыток оздаь ссылку забаннным юзеом
+    "serveстерr_bad_try_update_refresh": 0,  # Неудачных попыток обновить refresh token
+    "server_bad_change_pass": 0,  # Неудачных попыток сменить пароль
+    "server_good_change_pass": 0,  # Удачно смененные пароли
+    "server_error_register": 0,  # Ошибок при регистрации
+    "server_logout_account": 0,  # Логаутов из аккаунта
+    "server_enter_notfound_email": 0,  # Попыток входа с несуществующим емейлом
+    "server_guest_link": 0,  # Количество ссылок от гостей
+    "server_delete_link": 0,  # Ссылок удалено пользователями
+    "server_update_desrip_link": 0,  # Обновлено описаний
+    "server_new_users": 0,  # Новых пользователей
+    "server_send_msg_email": 0,  # Отправлено активаций
+    "server_activated": 0,  # Активированно аккаунтов
+    "server_reg_link": 0,  # Количество ссылок от зарегестрированных юзеров
+    "server_redirect": 0,  # Переходов за сегодня
+    "server_refresh_tokens": 0,  # Обновлено токенов
+    "server_good_enter": 0,  # Входов в аккаунт удачных (ввести логин-пароль)
+    "server_bad_enter": 0,  # Входов в аккаунт НЕ удачных (ввести логин-пароль)
+    "server_bad_try_activated": 0,  # Неудачных попыток активации
+    "server_time_generate_all_pdf": [
+        "Генерация отчетов"
+    ],  # Время генерации отчетов + очистка данных
+    "server_time_send_pdf": ["Рассылка отчетов"],  # Время рассылки всех сообщений
 }
 cache.set_many(stat_data, None)
-#cache.get_or_set("time_generate_all_pdf", "Значение не обнаружено", None)
-#cache.get_or_set("time_send_pdf", "Значение не обнаружено", None)
+# cache.get_or_set("time_generate_all_pdf", "Значение не обнаружено", None)
+# cache.get_or_set("time_send_pdf", "Значение не обнаружено", None)
 #  Параметры не для обслуживания сервера, не обнуляются в фоновых задачах по окончании дня
 technical_data = {
     "send_critical_msg": "No",
@@ -371,7 +384,8 @@ technical_data = {
     "count_cache_infolink": 0,
     "no_reload_day": 0,
     "reporteds": {},
-    "time_service": {}
+    "time_service": {},
 }
 cache.set_many(technical_data, None)
 cache.set("registrations_on_site", True, None)
+cache.set("dt_now", datetime.now(), None)

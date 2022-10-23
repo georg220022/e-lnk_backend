@@ -1,5 +1,6 @@
-from service.send_mail import RegMail
 from rest_framework import serializers
+
+from service.send_mail import RegMail
 from .models import User
 from service.generator_code import GeneratorCode as GeneratorId
 

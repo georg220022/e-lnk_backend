@@ -12,7 +12,7 @@ from .server_stat import ServerStat
 
 class RedisLink:
     @staticmethod
-    def writer(long_link: str, fast_link=False) -> dict | str:
+    def writer(long_link: str, fast_link=False) -> Union[dict, str]:
         short_code = (
             GeneratorShortCode.for_redis()
         )  # Генератор кода короткой ссылки для Redis.
@@ -60,7 +60,7 @@ class RedisLink:
 
 class PostgresLink:
     @staticmethod
-    def reader(short_code=None) -> dict:
+    def reader(short_code=None) -> Union[LinkRegUser, bool]:
         if "p" in str(short_code):
             try:
                 obj = LinkRegUser.objects.only(

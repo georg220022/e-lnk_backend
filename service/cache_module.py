@@ -1,7 +1,9 @@
 from collections import OrderedDict
-from elink_index.models import LinkRegUser
-
+from ctypes import Union
+from datetime import datetime
 from django.core.cache import cache
+
+from elink_index.models import LinkRegUser
 
 
 class CacheModule:
@@ -92,9 +94,7 @@ class CacheModule:
             cache.set(user_id, old_data, timer)
 
     @staticmethod
-    def editor(
-        user_id: int, link: OrderedDict, description=False, passwd=False
-    ) -> None:
+    def editor(user_id: int, link: dict, description=False, passwd=False) -> None:
         """Модуль редактирования информации в кеше (отображаемый пароль и имя ссылки в панели)"""
         old_data = cache.get(user_id)
         if old_data:
@@ -153,16 +153,18 @@ class CacheModule:
                 cache.delete_many(key_delete_data)
 
     @staticmethod
-    def count_lnk(user_id) -> bool:
+    def count_lnk(user_id: int) -> int:
         """Записываем количество ссылок пользователя в кеш"""
         if cache.has_key(f"link_limit_{user_id}"):
             return int(cache.get(f"link_limit_{user_id}"))
         count_lnk = LinkRegUser.objects.filter(author_id=user_id).count()
         cache.set(f"link_limit_{user_id}", count_lnk, 2700000)
-        return count_lnk #int(cache.get(f"link_limit_{user_id}"))
+        return count_lnk  # int(cache.get(f"link_limit_{user_id}"))
 
     @staticmethod
-    def get_days_click_link(day_week, obj_id, obj_author_id):
+    def get_days_click_link(
+        day_week: datetime, obj_id: int, obj_author_id: int
+    ) -> dict:
         """Модуль получения статистики переходов за текущую неделю по ссылке"""
         if not cache.has_key(f"ready_week_{day_week}_{obj_author_id}_{obj_id}"):
             days = {}
@@ -180,7 +182,7 @@ class CacheModule:
         return days
 
     @staticmethod
-    def get_today_click_link(obj):
+    def get_today_click_link(obj: LinkRegUser) -> Union[int, int]:
         """Модуль получения статистики переходов за сегодняшний день в реальном времени"""
         re_clicked_today = cache.get(f"statx_aclick_{obj.author_id}_{obj.id}")
         clicked_today = cache.get(f"statx_click_{obj.author_id}_{obj.id}")
@@ -191,12 +193,14 @@ class CacheModule:
         return re_clicked_today, clicked_today
 
     @staticmethod
-    def get_save_and_remove_infolink(obj, hour, device_id, countrys):
+    def get_save_and_remove_infolink(
+        obj: LinkRegUser, hour: dict, device_id: dict, countrys: dict
+    ) -> Union[dict, dict, dict]:
         data_calculated_info = cache.get(f"calculated_{obj.author_id}_{obj.id}")
         cache_hour = data_calculated_info[0]
         cache_device = data_calculated_info[1]
         cache_countrys = data_calculated_info[2]
-        for nums in range(23):
+        for nums in range(24):
             hour[nums] += int(cache_hour[nums])
         for nums in range(1, 8):
             device_id[nums] += cache_device[nums]
@@ -208,7 +212,7 @@ class CacheModule:
         return hour, device_id, countrys
 
     @staticmethod
-    def remove_stat_link(user_id):
+    def remove_stat_link(user_id: int) -> None:
         cache.delete_pattern(f"statx_aclick_{user_id}_*")
         cache.delete_pattern(f"statx_click_{user_id}_*")
         cache.delete_pattern(f"calculated_{user_id}_*")

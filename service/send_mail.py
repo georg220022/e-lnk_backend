@@ -1,19 +1,18 @@
-import email
 import os
+
 from datetime import datetime
-from elink.settings import REDIS_FOR_ACTIVATE
+from celery import shared_task
 from django.core.cache import cache
 from django.template.loader import get_template
 from django.core.mail import EmailMessage
-from users.models import User
+
+from elink.settings import REDIS_FOR_ACTIVATE
 from .generator_code import GeneratorCode as Generator_activation_code
-from .server_stat import ServerStat
-from celery import shared_task
 
 
 class RegMail:
     @shared_task
-    def change_pass(email, reset_key=False, passwd=False):
+    def change_pass(email, reset_key=False, passwd=False) -> None:
         if reset_key:
             reset_link = f"https://e-lnk.ru/change/{email}/{reset_key}"
             message = get_template("reset_pass.html").render({"reset_link": reset_link})
@@ -29,7 +28,9 @@ class RegMail:
         msg.send()
 
     @shared_task
-    def change_mail(old_email, new_email, user_id=None, old_msg=False):
+    def change_mail(
+        old_email: str, new_email: str, user_id=None, old_msg=False
+    ) -> None:
         if old_msg:
             context = {"old_email": old_email, "new_email": new_email}
             message = get_template("change_email.html").render(context=context)
@@ -81,32 +82,20 @@ class RegMail:
     @staticmethod
     def send_stat_pdf(yesterday: datetime) -> None:
         """Отправка статистики пользователям"""
-        list_bad_mail = []
         list_mail = os.listdir("pdf_storage")
         for email_user in list_mail:
-            try:
-                message = get_template("links-info-email.html").render(
-                    {"date_stat": yesterday}
-                )
-                msg = EmailMessage(
-                    f"Отчет за прошедший день - {yesterday}",
-                    message,
-                    "info@e-lnk.ru",
-                    [str(email_user[:-4])],
-                )
-                msg.content_subtype = "html"
-                msg.attach_file(f"pdf_storage/{email_user}")
-                msg.send()
-            except:
-                cache.incr("server_bad_send_pdf_day_stat")
-                ServerStat.reported(
-                    f"send_stat_{email_user}",
-                    f"Не удалось отправить статистику {email_user}",
-                )
-                list_bad_mail.append(email_user)
-                #data = cache.get("bad_try_send_mail")
-                #data.append(email_user)
-                #cache.set("bad_try_send_mail", data, None)
+            message = get_template("links-info-email.html").render(
+                {"date_stat": yesterday.strftime("%Y-%m-%d")}
+            )
+            msg = EmailMessage(
+                f"Отчет за прошедший день - {yesterday.strftime('%Y-%m-%d')}",
+                message,
+                "info@e-lnk.ru",
+                [str(email_user[:-4])],
+            )
+            msg.content_subtype = "html"
+            msg.attach_file(f"pdf_storage/{email_user}")
+            msg.send()
         """Безопасно удаляем все файлы с расширением .pdf"""
         filelist = [files for files in list_mail if files.endswith(".pdf")]
         [
@@ -114,5 +103,3 @@ class RegMail:
             for files in filelist
             if os.path.isfile(os.path.join("pdf_storage", files))
         ]
-        if len(list_bad_mail) > 0:
-            User.objects.filter(email__in=list_bad_mail).update(send_stat_email=False)

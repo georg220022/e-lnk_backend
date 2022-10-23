@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
+
 from .drf_spectacular import urlpatterns as data_url
 
 
@@ -15,7 +16,6 @@ urlpatterns = [
 urlpatterns += data_url
 
 handler404 = "service.handlers.handler404"
-# handler500 = "service.handlers.handler500"
 handler403 = "service.handlers.handler403"
 handler400 = "service.handlers.handler400"
 

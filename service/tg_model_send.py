@@ -1,9 +1,10 @@
-from datetime import datetime
+from datetime import date
 from django.core.cache import cache
 
 
 class TelegramStat:
-    def server_stat_day(yesterday: datetime) -> str:
+    @staticmethod
+    def server_stat_day(yesterday: date) -> str:
         """Всякие кривые-косые ру строки в коде - особенности
         форматирования текста в телеге"""
         ru_lang = [

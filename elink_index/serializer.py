@@ -70,7 +70,7 @@ class LinkAuthSerializer(serializers.ModelSerializer):
             "id",
         )
 
-    def validate(self, data):
+    def validate(self, data: dict) -> dict:
         """Делаем из CamelCase питонячий snake_case + валидируем данные"""
         data.pop("longLink", False)
         data["short_code"] = GeneratorShortCode.for_postgresql()

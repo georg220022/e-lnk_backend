@@ -1,9 +1,9 @@
 import geoip2.database
+
 from django.http import HttpRequest
 from django.core.cache import cache
 
 from elink.settings import BASE_DIR
-
 from .server_stat import ServerStat
 
 

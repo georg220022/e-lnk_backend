@@ -1,21 +1,19 @@
 import datetime
 import psutil
+
 from telegram import Bot
 from django.db.models import Q
 from django.core.cache import cache
+
 from elink.celery import app
+from service.user_time_now import UserTime
 from elink_index.models import InfoLink, LinkRegUser
-from personal_area.serializers import StatSerializer
 from elink.settings import TG_CHAT_DATA, TELEGRAM_TOKEN, stat_data
 from users.models import User
 from .tg_model_send import TelegramStat
 from .send_mail import RegMail
 from .creator_stat_pdf import StatCreate
 from .write_stat import WriteStat
-from service.user_time_now import UserTime
-from service.cache_module import CacheModule
-from service.statistic_link import StatLink
-from collections import OrderedDict
 
 
 bot = Bot(token=TELEGRAM_TOKEN)
@@ -23,6 +21,11 @@ bot = Bot(token=TELEGRAM_TOKEN)
 
 @app.task()
 def saver_info() -> None:
+    import time
+
+    time.sleep(  # Вынужденная мера, что бы убрать рассинхрон по времени крона и питонячей либы datetime
+        5
+    )
     """Ежечасно собираем данные по кликам из кеша и записываем в базу,
     попутно удаляем из кеша обработанную информацию"""
     start = datetime.datetime.now()
@@ -31,60 +34,54 @@ def saver_info() -> None:
         [bot.send_message(key, f"Сохранено") for key in TG_CHAT_DATA]
     else:
         [bot.send_message(key, "Сохранять нечего") for key in TG_CHAT_DATA]
-    utc_now = datetime.datetime.now(datetime.timezone.utc)
-    yesterday = utc_now - datetime.timedelta(days=1)
     # Берем список избранных юзеров для подсчета статистики
     user_list = list(
         User.objects.filter(
-            Q(banned=False)
-            & Q(trust_rating__gt=1)  # Q(subs_type__in=["MOD", "BTEST"]) &
+            Q(banned=False) & Q(trust_rating__gt=1) & Q(is_active=True)
         ).values_list("my_timezone", "send_stat_email", "email", "id", "subs_type")
     )
     for usr in user_list:
-        # Если этот пользователь не менял свой часовой пояс в настройках (UTC)
-        if not cache.get(f"edit_utc_{usr[3]}"):
-            user_hours = UserTime.day_week_now(
-                int(usr[0]), need_day_week=False
-            )  # utc_now + datetime.timedelta(hours=int(usr[0]))
-            if user_hours.strftime("%H") == "00":
-                """Если у пользователя полночь (00:00) по его местному времени,
-                высчитываем статистику за прошедший день для недельной статистики"""
-                # data_id.append(int(usr[3]))
-                day_week = user_hours.isoweekday()
-                # Если у пользователя статус не дефолтного пользователя - считаем ему статистику
-                if usr[4] != "REG":
-                    WriteStat.one_week(day_week, usr)
-                    # Если не дефолтный юзер включил отправку статистики на емейл
-                    if usr[1] is True:
-                        queryset = InfoLink.objects.select_related("link_check").filter(
-                            Q(link_check__author_id=int(usr[3]))
-                        )
-                        query_list = list(queryset.values())
-                        delete_id = [obj["id"] for obj in query_list]
-                        InfoLink.objects.filter(id__in=delete_id).delete()
-                        """Если пользователь указал в своем профиле присылать ему статистику на почту"""
-                        StatCreate.every_day_stat(usr, query_list)
-                # Если пользователь стандартный - только прибавляем в БД количество переходов за день
-                else:
-                    WriteStat.end_day(False, usr)
-                # Очищаем счетчики переходов по ссылкам за сутки
-                cache.set(f"count_infolink_{usr[3]}", 0, 200000)
-                cache.delete_pattern(f"calculated_{usr[3]}_*")
-                cache.delete_pattern(f"statx_aclick_{usr[3]}_*")
-                cache.delete_pattern(f"statx_click_{usr[3]}_*")
+        user_hours = UserTime.day_week_now(int(usr[0]), need_day_week=False)
+        if user_hours.strftime("%H") == "00":
+            """Если у пользователя полночь (00:00) по его местному времени,
+            высчитываем статистику за прошедший день для недельной статистики"""
+            day_week = user_hours.isoweekday()
+            # Если у пользователя статус не дефолтного пользователя - считаем ему статистику
+            if usr[4] != "REG":
+                WriteStat.one_week(day_week, usr)
+                # Если не дефолтный юзер включил отправку статистики на емейл
+                if usr[1] is True:
+                    queryset = InfoLink.objects.select_related("link_check").filter(
+                        Q(link_check__author_id=int(usr[3]))
+                    )
+                    query_list = list(queryset.values())
+                    delete_id = [obj["id"] for obj in query_list]
+                    InfoLink.objects.filter(id__in=delete_id).delete()
+                    if cache.has_key("dt_now"):
+                        cache.delete("dt_now")
+                    cache.set("dt_now", user_hours, None)
+                    """Если пользователь указал в своем профиле присылать ему статистику на почту"""
+                    StatCreate.every_day_stat(usr, query_list)
+            # Если пользователь стандартный - только прибавляем в БД количество переходов за день
+            else:
+                WriteStat.end_day(False, usr)
+            # Очищаем счетчики переходов по ссылкам за сутки
+            cache.set(f"count_infolink_{usr[3]}", 0, 200000)
+            cache.delete_pattern(f"calculated_{usr[3]}_*")
+            cache.delete_pattern(f"statx_aclick_{usr[3]}_*")
+            cache.delete_pattern(f"statx_click_{usr[3]}_*")
     # Удаляем статистику переходов из базы, у пользователей для которых произвели рассчет
-    # InfoLink.objects.filter(link_check__author_id__in=data_id).delete()
     time_service = datetime.datetime.now() - start
     data_service_time = cache.get("time_service")
     data_service_time[start] = time_service
     cache.set("time_service", data_service_time, None)
     cache.set("count_cache_infolink", 0, None)
     stop = datetime.datetime.now() - start
-    # if cache.has_key("")
     time_generate = cache.get("server_time_generate_all_pdf")
     time_generate.append(f"{datetime.datetime.now()}: {stop}")
     cache.set("server_time_generate_all_pdf", time_generate, None)
     start_2 = datetime.datetime.now()
+    yesterday = cache.get("dt_now") - datetime.timedelta(hours=1)
     RegMail.send_stat_pdf(yesterday)
     stop_2 = datetime.datetime.now() - start_2
     time_send_pdf = cache.get("server_time_send_pdf")
@@ -125,7 +122,7 @@ def send_admin_stat_tg() -> None:
 
 @app.task
 def cleaner_db() -> None:
-
+    # Если каким-то образом в БД есть старые данные - удаляем
     today = datetime.date.today()
     day_ago_4 = today - datetime.timedelta(days=4)
     InfoLink.objects.filter(date_check__date__lt=day_ago_4).delete()
@@ -133,7 +130,7 @@ def cleaner_db() -> None:
 
 @app.task
 def optimize_ttl_and_perfomance() -> None:
-
+    # Автоопределение жизни кеша в зависимости от нагрузки на ядро процессора
     time_live = int(cache.get("live_cache"))
     if int(psutil.cpu_percent()) > 30:
         if time_live < 3600:
@@ -172,8 +169,8 @@ def optimize_ttl_and_perfomance() -> None:
                 data = [
                     info_lnk for info_lnk in obj_lnk if info_lnk["link_check_id"] == ids
                 ]
-                device: Dict = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0}
-                countrys: Dict = {}
+                device = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0}
+                countrys = {}
                 hour = {
                     0: 0,
                     1: 0,

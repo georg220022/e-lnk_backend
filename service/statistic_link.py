@@ -1,8 +1,9 @@
-from typing import Dict
+from typing import Dict, Union
 
 
 class StatLink:
-    def per_24_hour(data, user_tz):
+    @staticmethod
+    def per_24_hour(data: list, user_tz: str) -> Union[dict, dict, dict]:
         """Соберем статистику за текущие 24 часа"""
         device = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0}
         countrys: Dict = {}
@@ -49,7 +50,10 @@ class StatLink:
                 hour[new_key] += 1
         return hour, device, countrys
 
-    def real_time_stat_from_cache(data, tz_key, device, countrys, hour, ids):
+    @staticmethod
+    def real_time_stat_from_cache(
+        data: list, tz_key: int, device: dict, countrys: dict, hour: dict, ids: int
+    ) -> Union[dict, dict, dict]:
         for objs in data:
             if objs.link_check_id == ids:
                 device[objs.device_id] += 1

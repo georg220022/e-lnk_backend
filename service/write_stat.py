@@ -1,14 +1,14 @@
 from collections import OrderedDict
 
 from django.core.cache import cache
-from django.db.models import Count, F
+from django.db.models import F
 
 from elink_index.models import InfoLink, LinkRegUser
 
 
 class WriteStat:
     @staticmethod
-    def one_week(day_week, usr) -> None:
+    def one_week(day_week: int, usr: list) -> None:
         """Получение количества кликов по всем ссылкам пользователя"""
         if day_week != 1:
             day_week -= 1

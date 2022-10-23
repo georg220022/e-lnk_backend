@@ -1,18 +1,19 @@
-from elink_index.models import InfoLink, LinkRegUser
+from elink_index.models import LinkRegUser
 from personal_area.serializers import StatSerializer
+
 from django.core.cache import cache
 from .model_for_pdf import PDF
-from django.db.models import Q
 
 
 class StatCreate:
     """Запись данных в pdf файл"""
 
-    def every_day_stat(usr, query_list) -> None:
+    def every_day_stat(usr: list, query_list: list) -> None:
         context = {
             "query_list": query_list,
             "action": "task_celery",
-            "user_tz": int(usr[3]),
+            # "user_tz": int(usr[3]), Было так с таймзоной... хотя в таске это id юзера
+            "user_tz": int(usr[0]),
             "optimize_panel": False,
         }
         serializer = StatSerializer(

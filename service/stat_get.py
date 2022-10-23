@@ -1,5 +1,4 @@
 from typing import Union
-
 from django.core.cache import cache
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
