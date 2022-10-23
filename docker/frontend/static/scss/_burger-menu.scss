@@ -1,0 +1,133 @@
+.burger {
+	width: $burger-width;
+	height: $burger-height;
+	color: $burger-color;
+	display: none;
+	position: relative;
+	background-color: transparent;
+	border: none;
+	padding: 0;
+	cursor: pointer;
+	z-index: 50;
+
+	@media (hover: hover) { 
+		&:hover {
+			opacity: 0.5;
+	  }
+	}
+}
+
+.burger::before, .burger::after {
+	height: $burger-line-height;
+	content: "";
+	position: absolute;
+	left: 0;
+	width: 100%;
+	background-color: currentColor;
+	z-index: 50;
+	transition: transform 0.3s ease-in-out, top 0.3s ease-in-out;
+}
+
+.burger::before {
+	top: 0;
+}
+
+.burger::after {
+	top: calc(100% - $burger-line-height);
+}
+
+.burger__line {
+	height: $burger-line-height;
+	position: absolute;
+	left: 0;
+	top: 50%;
+	transform: scale(1) translate(0, -50%);
+	width: 100%;
+	background-color: currentColor;
+	z-index: 50;
+	transition: transform 0.3s ease-in-out;
+}
+
+.burger--active::before {
+	top: 50%;
+	transform: rotate(45deg);
+	transition: transform 0.3s ease-in-out, top 0.3s ease-in-out;
+}
+
+.burger--active::after {
+	top: 50%;
+	transform: rotate(-45deg);
+	transition: transform 0.3s ease-in-out, top 0.3s ease-in-out;
+}
+
+.burger--active .burger__line {
+	transform: scale(0);
+	transition: transform 0.3s ease-in-out;
+}
+
+@media (max-width: $burger-breakpoint) {
+
+	.burger {
+		display: block;
+	}
+
+	.burger-menu-overlay {
+	  overflow: hidden;
+	  position: fixed;
+	  width: 100%;
+	  height: 100vh;
+	  background-color: rgba(25, 25, 25, 0.5);
+	  z-index: 28;
+	  transition: all 0.3s ease;
+	}
+
+	.header__nav {
+	  background-color: $burger-menu-color;
+	  width: calc($burger-menu-width - 4rem);
+	  position: fixed;
+	  bottom: 0;
+	  right: -100%; // slides from right: -100%; slides from left: 100%;
+	  height: calc(100% - rem(32));
+	  border-top-left-radius: rem(50);
+		border-top-right-radius: rem(50);
+	  visibility: hidden;
+	  opacity: 0;
+	  overflow: hidden;
+	  padding: 3rem $container-side-padding;
+	  z-index: 29;
+	  transition: all 0.4s ease;
+
+	  @media (max-width: $breakpoint390) {
+    	width: $burger-menu-width;
+  	}
+	}
+
+	.burger-menu--active.header__nav {
+	  visibility: visible;
+	  right: 2rem;
+	  opacity: 1;
+
+	  @media (max-width: $breakpoint390) {
+    	right: 0;
+  	}
+	}
+
+	.header__nav > .nav__list {
+		display: flex;
+		flex-direction: column;
+		text-align: center;
+		justify-content: center;
+		height: 100%;
+		width: 100%;
+		overflow-y: auto;
+	}
+
+	.header__nav > .nav__list > .nav__item {
+		white-space: unset;
+		padding: 1rem;
+	}
+
+	.header__nav > .nav__list > .nav__item > .nav__link {
+	}
+	
+}

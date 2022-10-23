@@ -1,6 +1,5 @@
 import datetime
 
-from typing import Union
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from django.http import HttpRequest

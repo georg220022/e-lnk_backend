@@ -1,0 +1,22 @@
+.success-registration {
+	max-width: rem(400);
+	padding: 0 rem(16) rem(16) rem(16);
+
+	@media (max-width: $breakpoint576) {
+		padding: 0;
+	}
+
+	&__title {
+		text-align: center;
+		margin-bottom: rem(16);
+	}
+
+	&__text {
+		text-align: center;
+		margin-bottom: rem(8);
+
+		& span {
+			color: $accent;
+		}
+	}
+}

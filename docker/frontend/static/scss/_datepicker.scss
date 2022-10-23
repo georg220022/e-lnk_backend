@@ -1,0 +1,51 @@
+@import 'libs/air-datepicker.css';
+
+.air-datepicker {
+	--adp-font-family: 'Roboto', sans-serif;
+	--adp-transition-duration: .2s;
+	--adp-background-color-selected-other-month-focused: darken(#3d96e5, 15%);
+	--adp-color: #353642;
+	--adp-color-secondary: #7c7c7c;
+	--adp-accent-color: #3d96e5;
+	--adp-color-disabled: #dedede;
+	--adp-color-other-month: #7c7c7c;
+		--adp-color-other-month-hover: #7c7c7c;
+	--adp-color-disabled-in-range: #dedede;
+	--adp-border-radius: 15px;
+	--adp-day-name-color: #3d96e5;
+	--adp-day-name-color-hover: darken(#3d96e5, 15%);
+	--adp-pointer-size: 0;
+	--adp-poiner-border-radius: 50%;
+	--adp-mobile-day-cell-height: 44px;
+	--adp-cell-border-radius: 50%;
+	--adp-cell-background-color-selected: #3d96e5;
+	--adp-cell-background-color-selected-hover: #3d96e5;
+	--adp-time-track-color-hover: #7c7c7c;
+	--adp-time-thumb-size: 18px;
+}
+
+.air-datepicker-overlay {
+	--adp-overlay-transition-duration: .2s;
+}
+
+.air-datepicker-time--row input[type='range']::-webkit-slider-thumb {
+	height: 18px;
+	width: 18px;
+	border-radius: 50%;
+}
+
+.air-datepicker-time--row input[type='range']::-moz-range-thumb {
+	height: 18px;
+	width: 18px;
+	border-radius: 50%;
+}
+
+.air-datepicker-time--row input[type='range']::-ms-thumb {
+	height: 18px;
+	width: 18px;
+	border-radius: 50%;
+}
+
+.air-datepicker-button {
+	font-size: rem(14);
+}
