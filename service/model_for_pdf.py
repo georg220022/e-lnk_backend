@@ -1,11 +1,12 @@
 from fpdf import FPDF
-from datetime import date, timedelta
+from datetime import timedelta
+from django.core.cache import cache
 
 
 class PDF(FPDF):
     """Модель(скелет) PDF документа для статистики за прошедший день"""
 
-    yesterday = date.today() - timedelta(days=1)
+    yesterday = cache.get("dt_now") - timedelta(hours=1)
     num_day = (yesterday).isoweekday()
     day_week_data = {
         1: "Понедельник",
@@ -17,8 +18,16 @@ class PDF(FPDF):
         7: "Воскресенье",
     }
     day_week = day_week_data[num_day]
+    yesterday = yesterday.strftime("%Y-%m-%d")
 
-    def set_title(self, headings, rows, col_widths, col_widths_2, col_names_2):
+    def set_title(
+        self,
+        headings: list,
+        rows: list,
+        col_widths: tuple,
+        col_widths_2: tuple,
+        col_names_2: list,
+    ) -> None:
         self.set_font("roboto_black", "", 7)
         self.set_fill_color(61, 150, 229)
         self.set_text_color(255)
@@ -37,8 +46,14 @@ class PDF(FPDF):
         self.ln()
 
     def colored_table(
-        self, headings, rows, col_widths, col_width_2, col_names_2, start_list
-    ):
+        self,
+        headings: list,
+        rows: list,
+        col_widths: tuple,
+        col_width_2: tuple,
+        col_names_2: list,
+        start_list: list,
+    ) -> None:
         self.set_title(headings, rows, col_widths, col_width_2, col_names_2)
         self.set_font("roboto_black", "", 6)
         self.set_fill_color(224, 235, 255)
@@ -85,7 +100,7 @@ class PDF(FPDF):
             counter += 1
         self.cell(31, 0, "", "T")
 
-    def header(self):
+    def header(self) -> None:
         self.add_font("roboto_black", "", "static/service/fonts/roboto_black.ttf")
         self.set_font("roboto_black", "", 8)
         self.image("static/service/img/e-lnk-logo.png", 10, 6, 50)
@@ -98,7 +113,7 @@ class PDF(FPDF):
         )
         self.ln(15)
 
-    def footer(self):
+    def footer(self) -> None:
         self.cell(31, 0, "", "L")
         self.set_y(-5)
         self.cell(0, 0, f"Страница {self.page_no()} из {{nb}}", align="C")

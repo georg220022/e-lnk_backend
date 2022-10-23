@@ -13,26 +13,9 @@ from elink.settings import TIME_SAVE_COOKIE
 from service.validators import CheckLink
 
 from .throttle import PassAnonymousThrottle, PassLinkUserThrottle
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample, OpenApiResponse
-from drf_spectacular.types import OpenApiTypes
 
-@extend_schema(
-        responses={
-                200: OpenApiResponse(),
-                400: OpenApiResponse(description="{'error': Тут будет сообщение об ошибке}"),
-            },
-        request=OpenApiTypes.OBJECT,
-        description="API отвечающий за регистрацию, timezone от '-12' до '+12' включительно, в видестроки",
-        auth=None,
-        operation_id=False,
-        operation=None,
-        examples=[
-            OpenApiExample(
-                "Смена timezone",
-                value = {"password": "YOU_PASS"}),
-        ],
-)
-def open_link(request: HttpRequest, short_code: str) -> Response:
+
+def open_link(request: HttpRequest, short_code: str) -> Response | redirect:
     """Модуль открытия ссылки по короткой ссылке"""
     if len(str(short_code)) == 11:
         object_redis = RedisLink.reader(short_code)
@@ -71,52 +54,7 @@ def open_link(request: HttpRequest, short_code: str) -> Response:
     cache.incr("server_open_bad_link")
     return redirect("https://e-lnk.ru/404")
 
-@extend_schema(
-    parameters=[
-        OpenApiParameter(name='shortCode', description='Код короткой ссылки', required=True,
-            type=str, examples=[
-                OpenApiExample(
-                    "Пример 1",
-                    summary="Короткий код",
-                    description="Код в формате str, 11 символов",
-                    value="EdP3pEs3LiX"
-                ),
-            ],),
-        OpenApiParameter(
-            name="password",
-            type=str,
-            required=True,
-            location=OpenApiParameter.QUERY,
-            description="Пароль от ссылки",
-            examples=[
-                OpenApiExample(
-                    "Пример 1",
-                    summary="Пароль",
-                    description="Пароль в формате str, от 1 до 16 символов",
-                    value="qwerty1234567890"
-                ),
-            ],
-        ),
-    ],
-            responses={
-            200 : OpenApiResponse(description="{\n'longLink': 'https://www.site.ru/'\n}"),
-            400: OpenApiResponse(description="{'error': 'Пароль не верный'}"),
-    },
-    request=OpenApiTypes.OBJECT,
-    description="API отвечающее за проверку пароля, если таковой имеется на ссылке." +
-                    "Перед обращением к данному API, нужно отправить GET запрос на открытие ссылки," +
-                    "тогда пароль попадет в кеш и его можно успешно проверять. В ином случае будет (статус-код 400" +
-                    "{ 'error': 'Вермя ввода пароля истекло. Откройте изначальную ссылу вновь'})",
-    auth=False,
-    operation_id=False,
-    operation=None,
-    examples=[
-        OpenApiExample(
-            "Пример 1",
-            value = {"password": "qwerty1234567890", "shortCode": "EdP3pEs3LiX"}
-        ),
-    ],
-)
+
 @api_view(["POST"])
 @permission_classes([AllowAny])
 @throttle_classes([PassLinkUserThrottle, PassAnonymousThrottle])
@@ -125,7 +63,7 @@ def unlock_pass(request: HttpRequest) -> Response:
     short_code = request.data.get("shortCode", False)
     passwd = request.data.get("password", False)
     if passwd and short_code:
-        obj = cache.get(f"open_{short_code}")
+        obj = cache.get(short_code)
         if obj:
             if str(obj["password"]) == passwd:
                 if not CheckLink.check_limited(obj, secure=True):

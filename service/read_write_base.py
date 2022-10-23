@@ -1,4 +1,3 @@
-from typing import Union
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.cache import cache
 
@@ -36,7 +35,7 @@ class RedisLink:
         return short_link
 
     @staticmethod
-    def reader(short_code: str) -> Union[dict, bool]:
+    def reader(short_code: str) -> dict | bool:
         if "r" not in short_code:
             return False
         try:
@@ -60,7 +59,7 @@ class RedisLink:
 
 class PostgresLink:
     @staticmethod
-    def reader(short_code=None) -> dict:
+    def reader(short_code=None) -> LinkRegUser | bool:
         if "p" in str(short_code):
             try:
                 obj = LinkRegUser.objects.only(

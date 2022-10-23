@@ -4,11 +4,6 @@ from .views import PostlinkViewset, FastlinkViewset
 name_space = "elink_index"
 
 urlpatterns = [
-    path(
-        "/<str:short_code>/password-check",
-        PostlinkViewset.as_view({"get": "open_link_pass"}),
-        name="pass_check",
-    ),
     path("/fastlink/<str:site>/", FastlinkViewset.as_view({"get": "create_link"})),
     path(
         "/links",

@@ -1,30 +1,37 @@
 import base64
 import logging
 import json
+
 from django.http import HttpRequest
+from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
+from django.shortcuts import get_object_or_404, redirect
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import BlacklistMixin, RefreshToken
 from rest_framework import status, viewsets, permissions, generics
-from elink_index.throttle import RegistrationAnonymousThrottle
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.shortcuts import redirect
-from django.shortcuts import get_object_or_404
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    extend_schema,
+    OpenApiParameter,
+    OpenApiExample,
+    OpenApiResponse,
+)
+
+from elink_index.throttle import RegistrationAnonymousThrottle
 from elink.settings import REDIS_FOR_ACTIVATE
 from service.cache_module import CacheModule
 from service.send_mail import RegMail
 from service.generator_code import GeneratorCode as GeneratorId
-from .models import User
 from service.server_stat import ServerStat
-from django.core.cache import cache
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample, OpenApiResponse
-from drf_spectacular.types import OpenApiTypes
+from .models import User
 from .serializers import (
     RegistrationSerializer,
     ChangePasswordSerializer,
     ChangeSettingsSerializer,
 )
+
 
 logger = logging.getLogger(__name__)
 
@@ -33,22 +40,6 @@ class CustomRefresh(viewsets.ViewSet, BlacklistMixin):
     def get_permissions(self):
         return (permissions.AllowAny(),)
 
-    @extend_schema(
-        responses={
-                200: OpenApiResponse(),
-                400: OpenApiResponse(description="{'error': Тут будет сообщение об ошибке}"),
-            },
-        request=OpenApiTypes.OBJECT,
-        description="API отвечающий за регистрацию, timezone от '-12' до '+12' включительно, в видестроки"
-        auth=None,
-        operation_id=False,
-        operation=None,
-        examples=[
-            OpenApiExample(
-                "Смена timezone",
-                value = {"password": "YOU_PASS"}),
-        ],
-    )
     def get_token(self, request: HttpRequest) -> Response:
         err_data = {
             "error": (
@@ -135,22 +126,6 @@ class RegistrationAPIView(APIView):
         RegistrationAnonymousThrottle,
     ]
 
-    @extend_schema(
-        responses={
-                200: OpenApiResponse(),
-                400: OpenApiResponse(description="{'error': Тут будет сообщение об ошибке}"),
-            },
-        request=OpenApiTypes.OBJECT,
-        description="API отвечающий за регистрацию, timezone от '-12' до '+12' включительно, в видестроки"
-        auth=None,
-        operation_id=False,
-        operation=None,
-        examples=[
-            OpenApiExample(
-                "Смена timezone",
-                value = {"password": "YOU_PASS"}),
-        ],
-    )
     def post(self, request: HttpRequest) -> Response:
         if cache.get("registrations_on_site"):
             eml_obj = request.data.get("email", False)
@@ -177,7 +152,10 @@ class RegistrationAPIView(APIView):
                         httponly=True,
                     )
                     data.set_cookie("registration_elink", max_age=2592000)
-                    id_email_user = {"id": user_instance.id, "email": user_instance.email}
+                    id_email_user = {
+                        "id": user_instance.id,
+                        "email": user_instance.email,
+                    }
                     RegMail.send_code.delay(id_email_user)
                     cache.incr("server_new_users")
                     return data
@@ -185,7 +163,8 @@ class RegistrationAPIView(APIView):
                 msg = {"error": "Пользователь с таким email уже существует"}
             else:
                 ServerStat.reported(
-                    "RegistrationAPIView_129", f"Ошибка регистрации: {serializer.errors}"
+                    "RegistrationAPIView_129",
+                    f"Ошибка регистрации: {serializer.errors}",
                 )
                 msg = {"error": "Ошибка регистрации, обратитесь в поддержку"}
                 cache.incr("server_error_register")
@@ -193,27 +172,12 @@ class RegistrationAPIView(APIView):
         msg = {"error": "Извините, регистрация временно приостановлена"}
         return Response(msg, status=status.HTTP_400_BAD_REQUEST)
 
+
 class EntersOnSite(viewsets.ViewSet):
     def get_permissions(self):
         return (permissions.AllowAny(),)
 
-    @extend_schema(
-        responses={
-                200: OpenApiResponse(),
-                400: OpenApiResponse(description="{'error': Тут будет сообщение об ошибке}"),
-            },
-        request=OpenApiTypes.OBJECT,
-        description="API отвечающий за регистрацию, timezone от '-12' до '+12' включительно, в видестроки"
-        auth=None,
-        operation_id=False,
-        operation=None,
-        examples=[
-            OpenApiExample(
-                "Смена timezone",
-                value = {"password": "YOU_PASS"}),
-        ],
-    )
-    def get_logout(self, request):
+    def get_logout(self, request: HttpRequest) -> Response:
         data = Response(status=status.HTTP_200_OK)
         # data.set_cookie("refresh", '1', max_age=0)
         data.delete_cookie("refresh")
@@ -221,19 +185,36 @@ class EntersOnSite(viewsets.ViewSet):
         return data
 
     @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="email",
+                type=str,
+                required=True,
+                description="Почта",
+            ),
+            OpenApiParameter(
+                name="password",
+                type=str,
+                required=True,
+                description="Пароль",
+            ),
+        ],
         responses={
-                200: OpenApiResponse(),
-                400: OpenApiResponse(description="{'error': Тут будет сообщение об ошибке}"),
-            },
+            200: OpenApiResponse(
+                description="'email': 'YOU_MAIL', 'access': 'BEARER_TOKEN'"
+            ),
+            400: OpenApiResponse(description="{'error': 'ERROR_MESSAGE'}"),
+        },
         request=OpenApiTypes.OBJECT,
-        description="API отвечающий за регистрацию, timezone от '-12' до '+12' включительно, в видестроки"
+        description="API отвечающий за получение токена доступа(авторизация)",
         auth=None,
         operation_id=False,
         operation=None,
         examples=[
             OpenApiExample(
-                "Смена timezone",
-                value = {"password": "YOU_PASS"}),
+                "Получение Access токена",
+                value={"email": "YOU_EMAIL", "password": "YOU_PASS"},
+            ),
         ],
     )
     def get_enter(self, request: HttpRequest) -> Response:
@@ -264,7 +245,6 @@ class EntersOnSite(viewsets.ViewSet):
                     )
                     cache.incr("server_good_enter")
                     return new_resp
-                # else:
                 cache.incr("server_bad_enter")
                 msg = {"error": "Не верный емейл или пароль"}
                 return Response(msg, status=status.HTTP_400_BAD_REQUEST)
@@ -277,44 +257,19 @@ class ActivateAccount(viewsets.ViewSet):
     def get_permissions(self):
         return (permissions.AllowAny(),)
 
-    @extend_schema(
-        parameters=[
-            OpenApiParameter(
-                name="password",
-                type=str,
-                required=True,
-                location=OpenApiParameter.QUERY,
-                description="Пароль от аккаунта",
-                examples=[
-                    OpenApiExample(
-                    "Пример 1",
-                    summary="Пароль",
-                    # description="Пароль от аккаунта",
-                    value="pass_you_account"
-                    ),
-                ],
-            ),
-        ],
-        responses={
-                200: OpenApiResponse(),
-                400: OpenApiResponse(description="{'error': Тут будет сообщение об ошибке}"),
-            },
-        request=OpenApiTypes.OBJECT,
-        description="API отвечающий за удаление аккаунта",
-        auth=None,
-        operation_id=False,
-        operation=None,
-        examples=[
-            OpenApiExample(
-                "Смена timezone",
-                value = {"password": "YOU_PASS"}),
-        ],
-    )
+    def get_reactivate(self):
+        id_email_user = {
+            "id": self.request.user.id,
+            "email": self.request.user.email,
+        }
+        RegMail.send_code.delay(id_email_user)
+        return Response(status=status.HTTP_200_OK)
+
     def get_activation(
         self, request: HttpRequest, id=None, activation_code=None
     ) -> Response:
         check_cookies = request.COOKIES.get("registration_elink", False)
-        #check_cookies = True
+        # check_cookies = True # Строка разрешающая активировать аккаунт не только с устройства с которого регестрировались
         if check_cookies is not False:
             if (id and activation_code) is not None:
                 user = get_object_or_404(User, id=id)
@@ -322,7 +277,7 @@ class ActivateAccount(viewsets.ViewSet):
                     obj = REDIS_FOR_ACTIVATE.get(id)
                     if obj.decode("utf-8") == str(activation_code):
                         user.is_active = True
-                        user.send_stat_email = True
+                        # user.send_stat_email = True # Временно отключил автоактивацию отправки статистики при подтверждении почты
                         user.save()
                         REDIS_FOR_ACTIVATE.delete(id)
                         response = redirect("https://e-lnk.ru")
@@ -337,106 +292,6 @@ class UserSettings(viewsets.ViewSet):
     def get_permissions(self):
         return (permissions.IsAuthenticated(),)
 
-    @extend_schema(
-        parameters=[
-            OpenApiParameter(
-                name="password",
-                type=str,
-                required=True,
-                location=OpenApiParameter.QUERY,
-                description="Пароль от аккаунта",
-                examples=[
-                    OpenApiExample(
-                    "Пример 1",
-                    summary="Пароль",
-                    # description="Пароль от аккаунта",
-                    value="pass_you_account"
-                    ),
-                ],
-            ),
-            OpenApiParameter(
-                name="email",
-                type=str,
-                required=False,
-                location=OpenApiParameter.QUERY,
-                description="Почта от аккаунта",
-                examples=[
-                    OpenApiExample(
-                    "Пример 1",
-                    summary="Email",
-                    # description="Пароль от аккаунта",
-                    value="email_you_account"
-                    ),
-                ],
-            ),
-            OpenApiParameter(
-                name="newPassword",
-                type=str,
-                required=False,
-                location=OpenApiParameter.QUERY,
-                description="Новый пароль от аккаунта",
-                examples=[
-                    OpenApiExample(
-                    "Пример 1",
-                    summary="Новый пароль",
-                    #description="Пароль от аккаунта",
-                    value="new_pass_you_account"
-                    ),
-                ],
-            ),
-            OpenApiParameter(
-                name="sendStat",
-                type=bool,
-                required=False,
-                location=OpenApiParameter.QUERY,
-                description="Отправка ежедневной статистики на почту",
-                examples=[
-                    OpenApiExample(
-                    "Пример 1",
-                    summary="Обновить параметр",
-                    #description="Пароль от аккаунта",
-                    value="true or false"
-                    ),
-                ],
-            ),
-            OpenApiParameter(
-                name="timezone",
-                type=str,
-                required=False,
-                location=OpenApiParameter.QUERY,
-                description="Смещение UTC от '-12' до '+12' включительно",
-                examples=[
-                    OpenApiExample(
-                    "Пример 1",
-                    summary="Смещение UTC",
-                    #description="Пароль от аккаунта",
-                    value="+3"
-                    ),
-                ],
-            ),
-        ],
-        responses={
-                200: OpenApiResponse(),
-                400: OpenApiResponse(description="{'error': Тут будет сообщение об ошибке}"),
-            },
-        request=OpenApiTypes.OBJECT,
-        description="API отвечающий за редактирование настроек аккаунта пользователя, отправлять поля только которые собираетесь менять",
-        auth=None,
-        operation_id=False,
-        operation=None,
-        examples=[
-            OpenApiExample(
-                "Смена timezone",
-                value = {"password": "YOU_PASS", "timezone": "+3"}),
-            OpenApiExample(
-                "Смена email",
-                value = {"password": "YOU_PASS", "email": "NEW_YOUR_EMAIL"}),
-            OpenApiExample( 
-                "Смена нескольких настроек",
-                value = {"password": "YOU_PASS", "timezone": "+3", "email": "NEW_YOUR_EMAIL", "sendStat": True}
-           ),
-        ],
-    )
     def get_cahnge_settings(self, request: HttpRequest) -> Response:
         instance = User.objects.get(id=request.user.id)
         serializer = ChangeSettingsSerializer(
@@ -454,39 +309,6 @@ class UserSettings(viewsets.ViewSet):
         data.set_cookie("registration_elink", max_age=2592000)
         return data
 
-    @extend_schema(
-        parameters=[
-            OpenApiParameter(
-                name="password",
-                type=str,
-                required=True,
-                location=OpenApiParameter.QUERY,
-                description="Пароль от аккаунта",
-                examples=[
-                    OpenApiExample(
-                    "Пример 1",
-                    summary="Пароль",
-                    # description="Пароль от аккаунта",
-                    value="pass_you_account"
-                    ),
-                ],
-            ),
-        ],
-        responses={
-                200: OpenApiResponse(),
-                400: OpenApiResponse(description="{'error': Тут будет сообщение об ошибке}"),
-            },
-        request=OpenApiTypes.OBJECT,
-        description="API отвечающий за удаление аккаунта",
-        auth=None,
-        operation_id=False,
-        operation=None,
-        examples=[
-            OpenApiExample(
-                "Смена timezone",
-                value = {"password": "YOU_PASS"}),
-        ],
-    )
     def get_delete_acc(self, request: HttpRequest) -> Response:
         user = User.objects.get(id=request.user.id)
         user_pass = request.data.get("password", False)
@@ -501,28 +323,13 @@ class UserSettings(viewsets.ViewSet):
             msg = "Пароль должен быть строкой"
         return Response(msg, status=status.HTTP_400_BAD_REQUEST)
 
-    @extend_schema(
-        responses={
-                200: OpenApiResponse(),
-                400: OpenApiResponse(description="{'error': Тут будет сообщение об ошибке}"),
-            },
-        request=OpenApiTypes.OBJECT,
-        description="API отвечающий за регистрацию, timezone от '-12' до '+12' включительно, в видестроки",
-        auth=None,
-        operation_id=False,
-        operation=None,
-        examples=[
-            OpenApiExample(
-                "Смена timezone",
-                value = {"password": "YOU_PASS"}),
-        ],
-    )
     def get_settings(self, request: HttpRequest) -> Response:
         user = User.objects.get(id=request.user.id)
         obj = {
             "timezone": user.my_timezone,
             "email": user.email,
             "sendStat": user.send_stat_email,
+            "isActivated": user.is_active,
         }
         return Response(obj, status=status.HTTP_200_OK)
 
@@ -530,40 +337,8 @@ class UserSettings(viewsets.ViewSet):
 class ResetUserInfo(viewsets.ViewSet):
     def get_permissions(self):
         return (permissions.AllowAny(),)
-    @extend_schema(
-        parameters=[
-            OpenApiParameter(
-                name="email",
-                type=str,
-                required=True,
-                location=OpenApiParameter.QUERY,
-                description="Email от аккаунта",
-                examples=[
-                    OpenApiExample(
-                    "Пример 1",
-                    summary="Почта",
-                    # description="Пароль от аккаунта",
-                    value="email_you_account"
-                    ),
-                ],
-            ),
-        ],
-        responses={
-                200: OpenApiResponse(),
-                400: OpenApiResponse(description="{'error': Тут будет сообщение об ошибке}"),
-            },
-        request=OpenApiTypes.OBJECT,
-        description="API отвечающий за сброс пароля",
-        auth=None,
-        operation_id=False,
-        operation=None,
-        examples=[
-            OpenApiExample(
-                "Смена timezone",
-                value = {"password": "YOU_PASS", "timezone": "+3"})
-        ],
-    )
-    def send_code_reset_pass(self, request):
+
+    def send_code_reset_pass(self, request: HttpRequest) -> Response:
         emails = request.data.get("email", False)
         if emails:
             if not cache.has_key(f"wait_{emails}"):
@@ -576,46 +351,16 @@ class ResetUserInfo(viewsets.ViewSet):
                 msg = {"error": "Почты не существует на сервисе"}
                 return Response(msg, status=status.HTTP_400_BAD_REQUEST)
             msg = {
-                "error": "Запрос восстановления пароля не чаще 1 раза в 15 минут, иногда письмо приходит не моментально, так же проверьте во входящих 'спам' или 'рассылки'"
+                "error": "Запрос восстановления пароля не чаще 1 раза в 15 минут, иногда письмо приходит" +
+                "не моментально, так же проверьте во входящих 'спам' или 'рассылки'"
             }
             return Response(msg, status=status.HTTP_400_BAD_REQUEST)
         msg = {"error": "Поле email обязательно"}
         return Response(msg, status=status.HTTP_400_BAD_REQUEST)
 
-    @extend_schema(
-        parameters=[
-            OpenApiParameter(
-                name="email",
-                type=str,
-                required=True,
-                location=OpenApiParameter.QUERY,
-                description="Email от аккаунта",
-                examples=[
-                    OpenApiExample(
-                    "Пример 1",
-                    summary="Почта",
-                    # description="Пароль от аккаунта",
-                    value="email_you_account"
-                    ),
-                ],
-            ),
-        ],
-        responses={
-                200: OpenApiResponse(),
-                400: OpenApiResponse(description="{'error': Тут будет сообщение об ошибке}"),
-            },
-        request=OpenApiTypes.OBJECT,
-        description="API отвечающий за сброс пароля",
-        auth=None,
-        operation_id=False,
-        operation=None,
-        examples=[
-            OpenApiExample(
-                "Смена timezone",
-                value = {"password": "YOU_PASS", "timezone": "+3"})
-        ],
-    )
-    def reset_pass(self, request, email=False, reset_code=False):
+    def reset_pass(
+        self, request: HttpRequest, email=False, reset_code=False
+    ) -> redirect:
         if email and reset_code:
             if cache.has_key(f"reset_pass_{email}"):
                 original_code = cache.get(f"reset_pass_{email}")

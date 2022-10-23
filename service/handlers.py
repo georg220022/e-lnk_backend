@@ -1,6 +1,8 @@
 import logging
+
 from telegram import Bot
 from django.shortcuts import redirect
+
 from elink.settings import TG_CHAT_DATA, TELEGRAM_TOKEN
 
 bot = Bot(token=TELEGRAM_TOKEN)

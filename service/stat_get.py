@@ -1,5 +1,3 @@
-from typing import Union
-
 from django.core.cache import cache
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -37,7 +35,7 @@ class StatisticGet:
 
     @staticmethod
     def collect_stats(
-        request_obj: HttpRequest, obj: Union[LinkRegUser, dict], secure=False
+        request_obj: HttpRequest, obj: LinkRegUser | dict, secure=False
     ) -> None:
         """Собираем информацию о кликах по ссылкам ДО 1000 штук, при достижении 1000 записей
         в кеше ЛИБО по прошествию 1 часа(не зависимо от количества записей в кеше)
@@ -78,7 +76,7 @@ class StatisticGet:
         cache.incr("count_cache_infolink")
 
     @staticmethod
-    def description(request: HttpRequest) -> Union[LinkRegUser, bool]:
+    def description(request: HttpRequest) -> LinkRegUser | bool:
         """Изменение описания ссылки(имени)"""
         obj_id = request.data.get("shortCodes", False)
         link_obj = get_object_or_404(LinkRegUser, short_code=obj_id)

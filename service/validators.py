@@ -1,19 +1,17 @@
 import datetime
+
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
-from elink_index.models import LinkRegUser
-from typing import Dict, Union
 from django.http import HttpRequest
 from django.core.cache import cache
+from typing import Dict, Union
+
 from elink_index.models import LinkRegUser
-from users.models import User
-from rest_framework.response import Response
-from rest_framework import status
 
 
 class CheckLink:
     @staticmethod
-    def get_long_url(request_data: Dict, fast_link=False) -> Union[bool, str]:
+    def get_long_url(request_data: Dict, fast_link=False) -> bool | str:
         """Проверка максимальной длинны ссылки для postgres'a и redis'a"""
         long_link = request_data.get("longLink", False)
         if long_link and len(long_link) < 5001:
@@ -52,7 +50,7 @@ class CheckLink:
         return False
 
     @staticmethod
-    def check_date_link(obj: LinkRegUser) -> bool:
+    def check_date_link(obj: LinkRegUser) -> bool | str:
         start = obj.start_link
         stop = obj.date_stop
         if not (start or stop) == "":
@@ -82,7 +80,8 @@ class CheckLink:
         return False
 
 
-class CheckSettings:
+# Походу придется выкинуть этот код
+"""class CheckSettings:
     @staticmethod
     def validate(user_id, obj):
         user = User.objects.get(id=user_id)
@@ -131,3 +130,4 @@ class CheckSettings:
                 msg = "Минимальная длинна пароля 8, максимальная 16 симолов"
                 return msg
         return data
+"""
