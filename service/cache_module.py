@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from ctypes import Union
+from typing import Union
 from datetime import datetime
 from django.core.cache import cache
 
