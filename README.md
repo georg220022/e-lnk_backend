@@ -71,6 +71,7 @@ P.p.s Мой хостинг стоит 350 рублей, выжимал что �
 ##### Telegram: https://t.me/lisenok_39  
 ***
 ![BackEnd](https://img.shields.io/badge/Developer-BackEnd-brightgreen?style=for-the-badge)  
+##### Web-Site: https://georg-dev.ru
 ##### Telegram: https://t.me/georg2022bcknd
 ##### GitHub: https://github.com/georg220022  
 ***  
