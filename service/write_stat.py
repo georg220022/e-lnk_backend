@@ -21,7 +21,7 @@ class WriteStat:
             WriteStat.end_day(obj_stat_today, usr)
         else:
             for nums in range(1, 8):
-                cache.delete_pattern(f"ready_week_{nums}_{usr[3]}*")
+                # Часть кода в приватном репозитории
             WriteStat.end_day(False, usr)
 
     @staticmethod
@@ -30,7 +30,7 @@ class WriteStat:
         за 1 час либо по достижению 1000 запмсей в кеше"""
         keys_cache_info_link = cache.keys("statx_info_*")
         InfoLink.objects.bulk_create(
-            [*OrderedDict(cache.get_many(keys_cache_info_link)).values()]
+            # Часть кода в приватном репозитории
         )
         cache.delete_many(
             keys_cache_info_link
@@ -43,7 +43,7 @@ class WriteStat:
         местное время 00-00 и очищает кешированную информацию за уже прошедший день.
         В новый день со свежей инфой! :)"""
         if obj_stat_today and usr:
-            clicks = obj_stat_today
+            # Часть кода в приватном репозитории
             again_clicks = OrderedDict(
                 cache.get_many(cache.keys(f"statx_aclick_{usr[3]}_*"))
             )
@@ -65,7 +65,7 @@ class WriteStat:
         data = [
             LinkRegUser(
                 id=id,
-                how_many_clicked=F("how_many_clicked") + click,
+                # Часть кода в приватном репозитории
                 again_how_many_clicked=F("again_how_many_clicked") + re_click,
             )
             for id, click, re_click in result.values()
