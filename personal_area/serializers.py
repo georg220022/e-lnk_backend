@@ -122,14 +122,9 @@ class StatSerializer(serializers.ModelSerializer):
         return short_link
 
     def get_statistics(self, obj: LinkRegUser) -> dict:
-        obj_lnk = self.context["query_list"]
-        user_tz = self.context["user_tz"]
-        user_id = obj.author_id
-        day_week = UserTime.day_week_now(user_tz, need_day_week=True)
-        data = [info_lnk for info_lnk in obj_lnk if info_lnk["link_check_id"] == obj.id]
-        hour, device_id, countrys = StatLink.per_24_hour(data, user_tz)
-        re_clicked_today, clicked_today = CacheModule.get_today_click_link(obj)
-        keys_cache_info_link = cache.keys(f"statx_info_{obj.id}*")
+            ####################################
+            # Часть кода в приватном репозитории
+            ####################################
         click_cache = list(
             OrderedDict(
                 cache.get_many(keys_cache_info_link)
