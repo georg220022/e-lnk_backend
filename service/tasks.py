@@ -54,9 +54,7 @@ def saver_info() -> None:
                     queryset = InfoLink.objects.select_related("link_check").filter(
                         Q(link_check__author_id=int(usr[3]))
                     )
-                    query_list = list(queryset.values())
-                    delete_id = [obj["id"] for obj in query_list]
-                    InfoLink.objects.filter(id__in=delete_id).delete()
+                    # Часть кода в приватном репозитории
                     if cache.has_key("dt_now"):
                         cache.delete("dt_now")
                     cache.set("dt_now", user_hours, None)
@@ -68,8 +66,9 @@ def saver_info() -> None:
             # Очищаем счетчики переходов по ссылкам за сутки
             cache.set(f"count_infolink_{usr[3]}", 0, 200000)
             cache.delete_pattern(f"calculated_{usr[3]}_*")
-            cache.delete_pattern(f"statx_aclick_{usr[3]}_*")
-            cache.delete_pattern(f"statx_click_{usr[3]}_*")
+            ####################################
+            # Часть кода в приватном репозитории
+            ####################################
     # Удаляем статистику переходов из базы, у пользователей для которых произвели рассчет
     time_service = datetime.datetime.now() - start
     data_service_time = cache.get("time_service")
@@ -83,10 +82,9 @@ def saver_info() -> None:
     start_2 = datetime.datetime.now()
     yesterday = cache.get("dt_now") - datetime.timedelta(hours=1)
     RegMail.send_stat_pdf(yesterday)
-    stop_2 = datetime.datetime.now() - start_2
-    time_send_pdf = cache.get("server_time_send_pdf")
-    time_send_pdf.append(f"{datetime.datetime.now()}: {stop_2}")
-    cache.set("server_time_send_pdf", time_send_pdf, None)
+            ####################################
+            # Часть кода в приватном репозитории
+            ####################################
 
 
 @app.task
@@ -137,11 +135,9 @@ def optimize_ttl_and_perfomance() -> None:
             time_live += 10
             cache.set("live_cache", time_live, None)
         else:
-            # Только 1 раз в день отправляем это сообщение
-            sends = str(cache.get("send_critical_msg"))
-            if sends == "No":
-                [bot.send_message(key, "Ядро не справляется") for key in TG_CHAT_DATA]
-                cache.set("send_critical_msg", "Yes", None)
+            ####################################
+            # Часть кода в приватном репозитории
+            ####################################
     else:
         if time_live != 10:
             time_live -= 10
@@ -156,13 +152,9 @@ def optimize_ttl_and_perfomance() -> None:
         for user_id in user_list_id_over_infolink:
             user = User.objects.get(id=user_id)
             user_tz = user.my_timezone
-            obj_lnk_id = list(LinkRegUser.objects.filter(author=user).values("id"))
-            queryset = InfoLink.objects.select_related("link_check").filter(
-                link_check__author=user
-            )
-            obj_lnk = list(queryset.values())
-            delete_id = [obj["id"] for obj in obj_lnk]
-            queryset.filter(id__in=delete_id).delete()
+            ####################################
+            # Часть кода в приватном репозитории
+            ####################################
             for key, ids in obj_lnk_id[0].items():
                 ids = int(ids)
                 delete_id.append(ids)
@@ -220,10 +212,9 @@ def optimize_ttl_and_perfomance() -> None:
                     for nums in range(23):
                         hour[nums] += cache_hour[nums]
                     for nums in range(1, 8):
-                        device[nums] += cache_device[nums]
-                    for obj in cache_countrys:
-                        if obj in countrys:
-                            countrys[obj] += cache_countrys[obj]
+            ####################################
+            # Часть кода в приватном репозитории
+            ####################################
                         else:
                             countrys[obj] = cache_countrys[obj]
                 data_calculated_info = [hour, device, countrys]
